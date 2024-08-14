@@ -1,0 +1,43 @@
+{
+    "compilerOptions": {
+        "paths": {
+            "#constants": ["./src/constants"],
+            "#constants/*": ["./src/constants/*"],
+
+            "#controllers": ["./src/controllers"],
+            "#controllers/*": ["./src/controllers/*"],
+
+            "#helpers": ["./src/helpers"],
+            "#helpers/*": ["./src/helpers/*"],
+
+            "#middlewares": ["./src/middlewares"],
+            "#middlewares/*": ["./src/middlewares/*"],
+
+            "#models": ["./src/models"],
+            "#models/*": ["./src/models/*"],
+
+            "#routes": ["./src/routes"],
+            "#routes/*": ["./src/routes/*"],
+
+            "#schemas": ["./src/schemas"],
+            "#schemas/*": ["./src/schemas/*"],
+
+            "#tools": ["./src/tools"],
+            "#tools/*": ["./src/tools/*"],
+
+            "#types": ["./src/types"],
+            "#types/*": ["./src/types/*"],
+
+            "#utils": ["./src/utils"],
+            "#utils/*": ["./src/utils/*"]
+        },
+
+        "target": "ES2016",
+        "module": "commonjs",
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true
+    }
+}
