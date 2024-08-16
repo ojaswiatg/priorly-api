@@ -1,8 +1,10 @@
 import mongoose, { Schema, type CallbackError } from "mongoose";
 import bcrypt from "bcrypt";
-import TodoModel from "./TodoModel";
 
-const UserSchema = new Schema(
+import TodoModel from "./TodoModel";
+import SessionModel from "./SessionModel";
+
+export const UserSchema = new Schema(
     {
         email: {
             type: String,
@@ -16,6 +18,7 @@ const UserSchema = new Schema(
         },
 
         name: { type: String, required: false, default: "" },
+        otp: { type: Number, required: false, default: 0 },
     },
     { timestamps: true },
 );
@@ -75,10 +78,11 @@ UserSchema.pre("findOneAndUpdate", async function (next) {
 });
 
 UserSchema.pre("findOneAndDelete", async function (next) {
-    // Before deleting the user, delete all its todos
+    // Before deleting the user, delete all its todos and sessions
     try {
-        const userID = this.getFilter()._id;
-        await TodoModel.deleteMany({ user: userID });
+        const userId = this.getFilter()._id;
+        await TodoModel.deleteMany({ user: userId });
+        await SessionModel.deleteMany({ user: userId });
         next();
     } catch (error) {
         console.error(error);

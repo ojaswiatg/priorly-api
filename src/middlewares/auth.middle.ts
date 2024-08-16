@@ -8,10 +8,10 @@ export async function isUserAuthenticated(
     res: Response,
     next: NextFunction,
 ) {
-    const userID = req.body.id;
-    const isAuthenticated = await hasUserSession(userID);
+    const userId = req.body.id;
+    const isAuthenticated = await hasUserSession(userId);
     if (!isAuthenticated) {
-        await storeUserSession(userID); // Example only
+        await storeUserSession(userId); // Example only
 
         return res.status(403).json({
             status: "error",
@@ -20,7 +20,7 @@ export async function isUserAuthenticated(
         });
     }
 
-    await deleteUserSession(userID); // Example only
+    await deleteUserSession(userId); // Example only
     next();
 }
 
