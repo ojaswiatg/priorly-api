@@ -5,7 +5,7 @@ import nodemailer from "nodemailer";
 import hbs from "nodemailer-express-handlebars";
 import type { NodemailerExpressHandlebarsOptions } from "nodemailer-express-handlebars";
 
-import otpStore from "./OTPStore";
+import otpStore from "./otp.store";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
