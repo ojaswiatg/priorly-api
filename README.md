@@ -1,4 +1,5 @@
 # BET Stack - Bun Express Typescript
+
 Uses bun as environment and package manager.
 <br/>
 Set the origin to your repository.
@@ -30,5 +31,51 @@ Set the origin to your repository.
 
 1. You can put some commonly used commands like build and release commands on a release.sh file and add a script to run in package.json file.
 2. Don't forget to set the origin to your repository!!!
+
+## How to build and deploy your app
+
+1. Authenticate to your repo
+
+```bash
+gcloud auth configure-docker <region_name>-docker.pkg.dev
+```
+
+2. Create a docker image
+
+```bash
+docker build -t <image_name> .
+```
+
+3. Testing the docker image locally
+
+```bash
+docker run -p <host_port>:<port_specified_in_app> run <image_name>
+```
+
+Now you can visit http://localhost<host_port> to see the app running.
+
+4. Tag the docker image
+
+```bash
+docker tag <image_name> <region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
+```
+
+5. Push the docker image to the Google Artifact Registry
+
+```bash
+docker push <region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
+```
+
+6. Deploy the image to the Google App Engine
+
+```bash
+gcloud app deploy --image-url=<region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
+```
+
+7. Browse your app
+
+```bash
+gcloud app browse
+```
 
 ### Happy Building!
