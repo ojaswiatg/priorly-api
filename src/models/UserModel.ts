@@ -18,7 +18,6 @@ export const UserSchema = new Schema(
         },
 
         name: { type: String, required: false, default: "" },
-        otp: { type: Number, required: false, default: 0 },
     },
     { timestamps: true },
 );

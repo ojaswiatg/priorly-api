@@ -22,8 +22,8 @@
             "#schemas": ["./src/schemas"],
             "#schemas/*": ["./src/schemas/*"],
 
-            "#tools": ["./src/tools"],
-            "#tools/*": ["./src/tools/*"],
+            "#stores": ["./src/schemas"],
+            "#stores/*": ["./src/schemas/*"],
 
             "#types": ["./src/types"],
             "#types/*": ["./src/types/*"],
@@ -32,12 +32,29 @@
             "#utils/*": ["./src/utils/*"]
         },
 
-        "target": "ES2016",
-        "module": "commonjs",
-        "outDir": "./dist",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
+        // Enable latest features
+        "lib": ["ESNext", "DOM"],
+        "target": "ES2015",
+        "module": "ESNext",
+        "moduleDetection": "force",
+        "allowJs": true,
+
+        // Bundler mode
+        "moduleResolution": "bundler",
+        "verbatimModuleSyntax": true,
+
+        // Best practices
         "strict": true,
-        "skipLibCheck": true
-    }
+        "skipLibCheck": true,
+        "noFallthroughCasesInSwitch": true,
+        "forceConsistentCasingInFileNames": true,
+
+        // Some stricter flags (disabled by default)
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "noPropertyAccessFromIndexSignature": false,
+
+        "outDir": "./dist"
+    },
+    "exclude": ["eslint.config.js"]
 }
