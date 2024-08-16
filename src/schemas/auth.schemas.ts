@@ -1,0 +1,53 @@
+import { z } from "zod";
+import {
+    userNameSchema,
+    userEmailSchema,
+    userPasswordSchema,
+    UserDetailsResponseSchema,
+} from "./user.schemas";
+
+// Requests
+export const AuthSignupRequest = z
+    .object({
+        name: userNameSchema,
+        email: userEmailSchema,
+        password: userPasswordSchema,
+        confirmPassword: userPasswordSchema,
+    })
+    .strict()
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    });
+
+export const AuthLoginRequest = z
+    .object({
+        email: userEmailSchema,
+        password: userPasswordSchema,
+    })
+    .strict();
+
+export const AuthForgotPasswordSchema = z
+    .object({
+        email: userEmailSchema,
+    })
+    .strict();
+
+export const AuthChangeEmailRequestSchema = z.object({
+    newEmail: userEmailSchema,
+});
+
+export type TAuthSignupRequest = z.infer<typeof AuthSignupRequest>;
+export type TAuthLoginRequest = z.infer<typeof AuthLoginRequest>;
+export type TAuthForgotPasswordSchema = z.infer<
+    typeof AuthForgotPasswordSchema
+>;
+export type TAuthChangeEmailRequestSchema = z.infer<
+    typeof AuthChangeEmailRequestSchema
+>;
+
+// Responses
+export const AuthChangeEmailResponseSchmea = UserDetailsResponseSchema;
+export type TAuthChangeEmailResponseSchmea = z.infer<
+    typeof AuthChangeEmailResponseSchmea
+>;
