@@ -39,16 +39,19 @@ async function signup(req: Request, res: Response) {
 
     try {
         delete userDetails.confirmPassword;
-
         const userArgs = userDetails as TAuthSignupRequest;
-        const otp = generateNewOTPForEmail(userArgs.email, userArgs.password);
+
+        const otp = await generateNewOTPForEmail(
+            userArgs.email,
+            userArgs.password,
+        );
 
         if (!otp) {
             return res.status(EServerResponseCodes.CONFLICT).json({
                 rescode: EServerResponseRescodes.ERROR,
                 message:
                     "Please wait for some time before requesting a new OTP",
-                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}}: OTP already requested`,
+                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: OTP already requested`,
             });
         }
 
@@ -59,18 +62,8 @@ async function signup(req: Request, res: Response) {
             context: {
                 otp,
             },
-        })
-            .then(async () => {
-                console.info(
-                    `auth/signup: Mail sent successfuly to ${userArgs.email}`,
-                );
-            })
-            .catch((error) => {
-                console.error(
-                    `Auth/Signup: Failed to send mail to ${userArgs.email}`,
-                );
-                console.error(error);
-            });
+            methodName: "auth/signup",
+        });
 
         return res.status(EServerResponseCodes.OK).json({
             rescode: EServerResponseRescodes.SUCCESS,

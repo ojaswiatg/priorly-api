@@ -2,6 +2,7 @@ import _ from "lodash";
 
 import SessionModel from "#models/SessionModel";
 import OTPModel from "#models/OTPModel";
+import { getCurrentTimestamp } from "#utils";
 
 // Sessions
 export async function createNewUserSession(email: string) {
@@ -87,7 +88,15 @@ async function canUserSendOTP(email: string) {
             // if OTP does not exist then we return true
             return true;
         }
-        // no need to check timelimit, the document deletes itself automatically in 1 minute - check schema definition for more details
+
+        const ONE_MINUTE = 60 * 1000;
+        const currTime = getCurrentTimestamp();
+        const prevTime = otpDoc.createdOn;
+
+        if (currTime && prevTime && currTime - prevTime >= ONE_MINUTE) {
+            await OTPModel.deleteOne({ email });
+            return true;
+        }
 
         return false;
     } catch (error) {
@@ -100,16 +109,19 @@ async function canUserSendOTP(email: string) {
 
 export async function generateNewOTPForEmail(email: string, password?: string) {
     try {
-        const otp = Math.floor(1000 + Math.random() * 9000);
         const canSendOTP = await canUserSendOTP(email);
-
         if (!canSendOTP) {
             return null;
         }
 
+        const otp = Math.floor(1000 + Math.random() * 9000);
+
+        // delete previously created otp if it is there
         await OTPModel.deleteOne({ email });
+
+        // create new otp
         const createdOTP = await OTPModel.create({ otp, email, password });
-        return createdOTP;
+        return createdOTP.otp;
     } catch (error) {
         console.error(`Failed to get generate new OTP. Email id: ${email}`);
         console.error(error);

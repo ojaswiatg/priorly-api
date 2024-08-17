@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const userNameSchema = z
     .string()
+    .min(3, "Name should at lease contain 3 valid characters")
     .max(120, "Name cannot be more that 120 characters long")
     .regex(
         /^[A-Za-z]+([.][A-Za-z]+)*([ ][A-Za-z]+([.][A-Za-z]+)*)*$/,

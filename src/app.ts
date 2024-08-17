@@ -33,7 +33,7 @@ app.use(cookieParser());
 
 app.use("/api", AppRouter);
 
-const PORT = process.env.PORT || 8080; // The Google App Engine requires our app to listen to this port
+const PORT = process.env.PORT || 8080; // The Google App Engine requires our app to listen to port 8080
 const MONGO_URI = String(process.env.MONGO_URI);
 
 mongoose

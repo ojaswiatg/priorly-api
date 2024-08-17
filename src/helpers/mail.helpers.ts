@@ -5,8 +5,6 @@ import nodemailer from "nodemailer";
 import hbs from "nodemailer-express-handlebars";
 import type { NodemailerExpressHandlebarsOptions } from "nodemailer-express-handlebars";
 
-import { generateNewOTPForEmail } from "#helpers";
-
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
 
@@ -15,9 +13,9 @@ interface ISendMailParams {
     subject: string;
     templateFileName: string;
     context: Record<string, unknown>;
-}
 
-interface ISendOTPParams extends Omit<ISendMailParams, "context"> {}
+    methodName: string;
+}
 
 const APP_EMAIL = String(process.env.SMTP_MAIL);
 
@@ -50,22 +48,15 @@ export async function sendMail(params: ISendMailParams) {
         context: params.context,
     };
 
-    await mailTransporter.sendMail(mailOptions);
-}
-
-export async function sendOTP(params: ISendOTPParams) {
-    // auth operations - change email, after change passowrd
-    // Validate if user can send otp separately so that we can work synchronously here - otpStore.canSendOTP
-
-    const otp = await generateNewOTPForEmail(params.emailTo);
-
-    const mailOptions = {
-        from: APP_EMAIL,
-        to: params.emailTo,
-        subject: params.subject,
-        template: params.templateFileName,
-        context: { otp },
-    };
-
-    await mailTransporter.sendMail(mailOptions);
+    try {
+        await mailTransporter.sendMail(mailOptions);
+        console.info(
+            `${params.methodName}: Mail sent successfuly to ${params.emailTo}`,
+        );
+    } catch (error) {
+        console.error(
+            `${params.methodName}: Failed to send mail to ${params.emailTo}`,
+        );
+        console.error(error);
+    }
 }

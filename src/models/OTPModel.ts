@@ -78,6 +78,6 @@ OTPSchema.set("toJSON", {
     virtuals: true,
 });
 
-const OTPModel = mongoose.model<IOTP>("Users", OTPSchema);
+const OTPModel = mongoose.model<IOTP>("OTPs", OTPSchema);
 
 export default OTPModel;
