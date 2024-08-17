@@ -53,6 +53,7 @@
         "eslint-plugin-prettier": "^5.2.1",
         "nodemon": "^3.1.4",
         "prettier": "^3.3.3",
+        "prettier-plugin-organize-imports": "^4.0.0",
         "resolve-tspaths": "^0.8.19",
         "typescript-eslint": "^7.17.0"
     }

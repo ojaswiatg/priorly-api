@@ -1,16 +1,15 @@
+import type { EOTPOperation } from "#constants";
+import OTPModel from "#models/OTPModel";
+import SessionModel from "#models/SessionModel";
+import UserModel from "#models/UserModel";
+import { getCurrentTimestamp } from "#utils";
 import _ from "lodash";
 
-import SessionModel from "#models/SessionModel";
-import OTPModel from "#models/OTPModel";
-import { getCurrentTimestamp } from "#utils";
-import type { EOTPOperation } from "#constants";
-import UserModel from "#models/UserModel";
-
 // Sessions
-export async function createNewUserSession(email: string) {
-    const user = await UserModel.findOne({ email });
+export async function createNewUserSession(userId: string) {
+    const user = await UserModel.findById(userId);
     if (_.isEmpty(user)) {
-        throw new Error("Cannot find any user with this email");
+        throw new Error(`Cannot find any user with this user id: ${userId}`);
     }
     const session = await SessionModel.create({ user: user.id });
     return session.id;
@@ -95,6 +94,7 @@ async function canUserSendOTP(email: string) {
         const prevTime = otpDoc.createdOn;
 
         if (currTime && prevTime && currTime - prevTime >= ONE_MINUTE) {
+            // deletes the previous OTP
             await OTPModel.deleteOne({ email });
             return true;
         }
@@ -110,6 +110,7 @@ async function canUserSendOTP(email: string) {
 
 interface IGenerateNewOTPForEmailParams {
     email: string;
+    name?: string;
     operation: EOTPOperation;
     password?: string;
     newEmail?: string;
@@ -148,6 +149,7 @@ export async function generateNewOTPForEmail(
         const createdOTP = await OTPModel.create({
             otp,
             email: params.email,
+            name: params.name,
             password: params.password,
             operation: params.operation,
         });

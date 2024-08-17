@@ -1,8 +1,6 @@
-import { Router } from "express";
-
-import { isEmailAlreadyTaken } from "#middlewares/auth.middle";
-
 import AuthController from "#controllers/auth.controller";
+import { isEmailAlreadyTaken } from "#middlewares/auth.middle";
+import { Router } from "express";
 
 const router = Router();
 

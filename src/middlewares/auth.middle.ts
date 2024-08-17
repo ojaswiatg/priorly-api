@@ -1,14 +1,12 @@
-import type { Request, Response, NextFunction } from "express";
-import _ from "lodash";
-
 import {
     API_ERROR_MAP,
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
-
-import UserModel from "#models/UserModel";
 import SessionModel from "#models/SessionModel";
+import UserModel from "#models/UserModel";
+import type { NextFunction, Request, Response } from "express";
+import _ from "lodash";
 
 export async function isUserAuthenticated(
     req: Request,
@@ -27,8 +25,8 @@ export async function isUserAuthenticated(
             });
         }
 
-        const userId = session.userId;
-        req.params.userId = userId;
+        req.params.userId = session.userId;
+        req.params.email = session.email;
 
         next();
     } catch (error) {

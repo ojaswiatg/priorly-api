@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { TODO_PRIORITY } from "#constants";
+import { z } from "zod";
 
 // Requests
 const todoTitleSchema = z

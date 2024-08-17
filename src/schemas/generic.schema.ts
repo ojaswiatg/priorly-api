@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { EServerResponseRescodes } from "#constants";
+import { z } from "zod";
 
 export const APISuccessResponseSchema = z
     .object({

@@ -1,3 +1,4 @@
+import { EOTPOperation } from "#constants";
 import { z } from "zod";
 
 export const userNameSchema = z
@@ -31,6 +32,16 @@ export const userPasswordSchema = z
     });
 
 // Requests
+export const UserCreateSchema = z
+    // we will get these values from the OTP Table
+    .object({
+        otp: z.number(),
+        email: userEmailSchema,
+        name: userNameSchema,
+        password: z.string(), // getting from OTP Table, already hashed
+        operation: z.nativeEnum(EOTPOperation),
+    }); // internal operation - no need to apply strict
+
 export const UserChangePasswordSchema = z
     .object({
         password: userPasswordSchema,
@@ -46,6 +57,7 @@ export const UserChangeNameSchema = z.object({
     newName: userNameSchema,
 });
 
+export type TUserCreateSchema = z.infer<typeof UserCreateSchema>;
 export type TUserChangePasswordSchema = z.infer<
     typeof UserChangePasswordSchema
 >;

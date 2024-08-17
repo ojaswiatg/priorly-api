@@ -4,5 +4,5 @@
     "tabWidth": 4,
     "useTabs": false,
     "singleQuote": false,
-    "plugins": ["eslint-plugin-prettier"]
+    "plugins": ["eslint-plugin-prettier", "prettier-plugin-organize-imports"]
 }

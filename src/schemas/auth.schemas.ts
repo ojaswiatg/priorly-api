@@ -1,9 +1,9 @@
 import { z } from "zod";
 import {
-    userNameSchema,
-    userEmailSchema,
-    userPasswordSchema,
     UserDetailsResponseSchema,
+    userEmailSchema,
+    userNameSchema,
+    userPasswordSchema,
 } from "./user.schemas";
 
 // Requests

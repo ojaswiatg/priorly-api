@@ -1,6 +1,5 @@
-import mongoose, { Schema, Document } from "mongoose";
 import _ from "lodash";
-
+import mongoose, { Document, Schema } from "mongoose";
 import UserModel, { UserSchema } from "./UserModel";
 
 interface ISession extends Document {

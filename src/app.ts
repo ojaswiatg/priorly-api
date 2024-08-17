@@ -1,11 +1,11 @@
-import dotenv from "dotenv"; // loads the config files
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
-import cookieParser from "cookie-parser";
 // import _ from "lodash";
-
 import AppRouter from "#routes/router";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+// loads the config files
+import express from "express";
+import mongoose from "mongoose";
 
 dotenv.config();
 const app = express();

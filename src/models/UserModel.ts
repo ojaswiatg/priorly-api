@@ -1,8 +1,7 @@
-import mongoose, { Schema, type CallbackError, Document } from "mongoose";
 import bcrypt from "bcrypt";
-
-import TodoModel from "./TodoModel";
+import mongoose, { Document, Schema, type CallbackError } from "mongoose";
 import SessionModel from "./SessionModel";
+import TodoModel from "./TodoModel";
 
 interface IUser extends Document {
     id: string;

@@ -1,11 +1,14 @@
-import mongoose, { Schema, Document } from "mongoose";
+import type { EOTPOperation } from "#constants";
 import bcrypt from "bcrypt";
+import mongoose, { Document, Schema } from "mongoose";
 
 interface IOTP extends Document {
     email: string;
+    name: string;
     otp: number;
     password: string;
     createdOn: number;
+    operation: EOTPOperation;
 }
 
 export const OTPSchema = new Schema(
@@ -16,6 +19,7 @@ export const OTPSchema = new Schema(
             unique: [true],
             lowercase: [true], // converts the value to lower case before storing
         },
+        name: { type: String, required: false, default: "" },
         newEmail: {
             type: String,
             lowercase: [true], // converts the value to lower case before storing
@@ -28,13 +32,14 @@ export const OTPSchema = new Schema(
         password: {
             type: String,
         },
+
         operation: {
             type: Number,
             required: [true, "A valid operation is required"],
         },
 
-        // deletes the otp automatically after one day - manually delete after successful operation
-        createdAt: { type: Date, default: Date.now, expires: "1d" },
+        // deletes the otp automatically after 10 minutes - manually delete after successful operation
+        createdAt: { type: Date, default: Date.now, expires: 600 },
     },
     { timestamps: true },
 );

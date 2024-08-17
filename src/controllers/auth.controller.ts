@@ -1,35 +1,34 @@
-import type { Request, Response } from "express";
-import _ from "lodash";
-import type { ZodError } from "zod";
-
-import { getFormattedZodErrors, logURL } from "#utils";
 import {
     API_ERROR_MAP,
     EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
-
-import { AuthSignupRequest, type TAuthSignupRequest } from "#schemas";
 import { generateNewOTPForEmail, sendMail } from "#helpers";
+import { AuthSignupRequest, type TAuthSignupRequest } from "#schemas";
+import { getFormattedZodErrors, logURL } from "#utils";
+import type { Request, Response } from "express";
+import _ from "lodash";
+import type { ZodError } from "zod";
 
 async function signup(req: Request, res: Response) {
+    // sends a mail caught by UserController.create
     logURL(req);
-    if (req.cookies.sid) {
-        return res.status(EServerResponseCodes.BAD_REQUEST).json({
-            rescode: EServerResponseRescodes.ERROR,
-            message: "Please log out to continue",
-            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
-        });
-    }
+    // if (req.cookies.sid) {
+    //     return res.status(EServerResponseCodes.BAD_REQUEST).json({
+    //         rescode: EServerResponseRescodes.ERROR,
+    //         message: "Please log out to continue",
+    //         error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
+    //     });
+    // }
 
     let userDetails = req.body;
 
     if (_.isEmpty(userDetails)) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to create user",
-            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Email and password required.`,
+            message: "Failed to create user",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Email and password are required.`,
         });
     }
 
@@ -40,7 +39,7 @@ async function signup(req: Request, res: Response) {
 
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to create user",
+            message: "Failed to create user",
             error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid data.`,
             errors,
         });
@@ -53,8 +52,10 @@ async function signup(req: Request, res: Response) {
         // Check for user already exist - already done by middleware isEmailAlreadyTaken
 
         // Check and generate a new OTP
+
         const otp = await generateNewOTPForEmail({
             email: userArgs.email,
+            name: userArgs.name,
             password: userArgs.password,
             operation: EOTPOperation.SIGNUP,
         });
