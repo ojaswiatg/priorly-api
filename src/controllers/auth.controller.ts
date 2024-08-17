@@ -12,7 +12,6 @@ import {
 
 import { AuthSignupRequest, type TAuthSignupRequest } from "#schemas";
 import { generateNewOTPForEmail, sendMail } from "#helpers";
-import UserModel from "#models/UserModel";
 
 async function signup(req: Request, res: Response) {
     logURL(req);
@@ -43,16 +42,9 @@ async function signup(req: Request, res: Response) {
         delete userDetails.confirmPassword;
         const userArgs = userDetails as TAuthSignupRequest;
 
-        const user = await UserModel.findOne({ email: userArgs.email });
-        if (!_.isEmpty(user)) {
-            return res.status(EServerResponseCodes.CONFLICT).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message:
-                    "Email already taken, please use a different email or login",
-                error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: User already exist`,
-            });
-        }
+        // Check for user already exist - already done by middleware isEmailAlreadyTaken
 
+        // Check and generate a new OTP
         const otp = await generateNewOTPForEmail({
             email: userArgs.email,
             password: userArgs.password,
@@ -64,7 +56,7 @@ async function signup(req: Request, res: Response) {
                 rescode: EServerResponseRescodes.ERROR,
                 message:
                     "Please wait for some time before requesting a new OTP",
-                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: OTP already requested`,
+                error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: OTP already requested`,
             });
         }
 
