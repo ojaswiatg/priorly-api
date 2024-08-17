@@ -27,5 +27,6 @@ router.post("/forgot", canSendAnotherEmail, AuthController.forgotPassword); // s
 router.put("/setpass", AuthController.setPassword); // catches email sent by auth/forgot
 
 router.get("/logout", isAuthenticated, AuthController.logout);
+router.get("/logout/all", isAuthenticated, AuthController.logoutAll);
 
 export default router;

@@ -1,3 +1,6 @@
+import _ from "lodash";
+import type { ZodError } from "zod";
+
 export function getFormattedTimestamp(
     timestamp: number,
     options?: Intl.DateTimeFormatOptions,
@@ -22,6 +25,18 @@ export function getFormattedTimestamp(
     return formattedDateTime;
 }
 
-export function getCurrentTimeStamp() {
-    return new Date().getTime() / 1000;
+export function getFormattedZodErrors(error: ZodError) {
+    const init = {} as Record<string, string>;
+
+    const errors = _.reduce(
+        error.errors,
+        (allErrors, e) => {
+            const errorPath = e.path[0];
+            allErrors[errorPath] = e.message;
+            return allErrors;
+        },
+        init,
+    );
+
+    return errors;
 }
