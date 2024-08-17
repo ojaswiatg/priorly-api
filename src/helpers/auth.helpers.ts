@@ -3,8 +3,6 @@ import _ from "lodash";
 import SessionModel from "#models/SessionModel";
 import OTPModel from "#models/OTPModel";
 
-import { getCurrentTimestamp } from "#utils";
-
 // Sessions
 export async function createNewUserSession(email: string) {
     try {
@@ -82,52 +80,40 @@ export async function isUserLoggedIn(email: string, sessionId: string) {
 }
 
 // OTP
-export async function generateNewOTPForEmail(email: string) {
-    try {
-        let otp = Math.floor(1000 + Math.random() * 9000);
-        let thisOTPExist = await OTPModel.findOne({ otp });
-
-        // Loop until we generate a unique OTP
-        while (!_.isEmpty(thisOTPExist)) {
-            otp = Math.floor(1000 + Math.random() * 9000);
-            thisOTPExist = await OTPModel.findOne({ otp });
-        }
-
-        const createdOTP = await OTPModel.create({ otp, email });
-
-        return createdOTP;
-    } catch (error) {
-        console.error(`Failed to get generate new OTP. Email id: ${email}`);
-        console.error(error);
-        return null;
-    }
-}
-
-export async function canUserSendOTP(email: string) {
+async function canUserSendOTP(email: string) {
     try {
         const otpDoc = await OTPModel.findOne({ email });
         if (_.isEmpty(otpDoc)) {
             // if OTP does not exist then we return true
             return true;
         }
+        // no need to check timelimit, the document deletes itself automatically in 1 minute - check schema definition for more details
 
-        const ONE_MINUTE_MS = 60 * 1000; // 1 minute
-        const currTime = getCurrentTimestamp();
-        const prevTime = otpDoc.createdOn;
-
-        if (prevTime && currTime && currTime - prevTime < ONE_MINUTE_MS) {
-            // if the diff is less than one minute, return false
-            return false;
-        }
-
-        // delete the previous otp and return true
-        await OTPModel.deleteOne({ email });
-        return true;
+        return false;
     } catch (error) {
         console.error(
             `Failed to check if user can send OTP. Email id: ${email}`,
         );
         return false;
+    }
+}
+
+export async function generateNewOTPForEmail(email: string, password?: string) {
+    try {
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        const canSendOTP = await canUserSendOTP(email);
+
+        if (!canSendOTP) {
+            return null;
+        }
+
+        await OTPModel.deleteOne({ email });
+        const createdOTP = await OTPModel.create({ otp, email, password });
+        return createdOTP;
+    } catch (error) {
+        console.error(`Failed to get generate new OTP. Email id: ${email}`);
+        console.error(error);
+        return null;
     }
 }
 
@@ -137,6 +123,19 @@ export async function deleteOTPForUser(email: string) {
         return true;
     } catch (error) {
         console.error(`Failed to delete user OTP. Email id: ${email}`);
+        return false;
+    }
+}
+
+export async function isValidOTPForUser(email: string, otp: number) {
+    try {
+        const otpDoc = await OTPModel.findOne({ email });
+        if (otpDoc && otpDoc.otp === otp) {
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error(`Failed to check user OTP. Email id: ${email}`);
         return false;
     }
 }

@@ -10,6 +10,7 @@ import {
 } from "#constants";
 
 import { AuthSignupRequest, type TAuthSignupRequest } from "#schemas";
+import { generateNewOTPForEmail, sendMail } from "#helpers";
 
 async function signup(req: Request, res: Response) {
     logURL(req);
@@ -40,47 +41,47 @@ async function signup(req: Request, res: Response) {
         delete userDetails.confirmPassword;
 
         const userArgs = userDetails as TAuthSignupRequest;
+        const otp = generateNewOTPForEmail(userArgs.email, userArgs.password);
 
-        const verificationLinkPayload = await signData({
-            userDetails: {
-                email: userArgs.email,
-                password: userArgs.password,
-                name: userArgs.name ?? "",
-            },
-        });
+        if (!otp) {
+            return res.status(EServerResponseCodes.CONFLICT).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message:
+                    "Please wait for some time before requesting a new OTP",
+                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}}: OTP already requested`,
+            });
+        }
 
-        const serverURI = getServerURI();
         sendMail({
-            emailTo: userDetails.email,
+            emailTo: userArgs.email,
             subject: "Verify your Priorly account",
             templateFileName: "signup",
             context: {
-                verificationLink: `${serverURI}/api/user/signup?details=${verificationLinkPayload}`,
+                otp,
             },
         })
             .then(async () => {
                 console.info(
-                    `Auth/Signup: Mail sent successfuly to ${userDetails.email}`,
+                    `auth/signup: Mail sent successfuly to ${userArgs.email}`,
                 );
-                await storetMailTimestamp(userArgs.email);
             })
             .catch((error) => {
                 console.error(
-                    `Auth/Signup: Failed to send mail to ${userDetails.email}`,
+                    `Auth/Signup: Failed to send mail to ${userArgs.email}`,
                 );
                 console.error(error);
             });
 
         return res.status(EServerResponseCodes.OK).json({
             rescode: EServerResponseRescodes.SUCCESS,
-            message: "Verification mail sent, please check your email",
+            message: "Verification code sent, please check your email",
         });
     } catch (error) {
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Unable to signup",
-            error: "Internal server error",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}`,
         });
     }
 }
