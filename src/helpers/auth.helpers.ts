@@ -3,6 +3,7 @@ import _ from "lodash";
 import SessionModel from "#models/SessionModel";
 import OTPModel from "#models/OTPModel";
 import { getCurrentTimestamp } from "#utils";
+import type { EOTPOperation } from "#constants";
 
 // Sessions
 export async function createNewUserSession(email: string) {
@@ -107,23 +108,54 @@ async function canUserSendOTP(email: string) {
     }
 }
 
-export async function generateNewOTPForEmail(email: string, password?: string) {
+interface IGenerateNewOTPForEmailParams {
+    email: string;
+    operation: EOTPOperation;
+    password?: string;
+    newEmail?: string;
+}
+
+export async function generateNewOTPForEmail(
+    params: IGenerateNewOTPForEmailParams,
+) {
     try {
-        const canSendOTP = await canUserSendOTP(email);
+        const canSendOTP = await canUserSendOTP(params.email);
         if (!canSendOTP) {
             return null;
         }
 
-        const otp = Math.floor(1000 + Math.random() * 9000);
+        // delete previously created otp if it is there for the user
+        await OTPModel.deleteOne({ email: params.email });
 
-        // delete previously created otp if it is there
-        await OTPModel.deleteOne({ email });
+        // Keep finding unique OTP until it is found but with a certain timelimit
+
+        const endTime = Date.now() + 30 * 1000; // Run this loop for max of 30 seconds only
+        let otp, otpFound;
+
+        do {
+            const currTime = Date.now();
+            if (currTime > endTime) {
+                throw new Error(
+                    "Cannot generate unique OTP: time limit exceeded",
+                );
+            }
+
+            otp = Math.floor(100000 + Math.random() * 900000);
+            otpFound = await OTPModel.findOne({ otp });
+        } while (!_.isEmpty(otpFound));
 
         // create new otp
-        const createdOTP = await OTPModel.create({ otp, email, password });
+        const createdOTP = await OTPModel.create({
+            otp,
+            email: params.email,
+            password: params.password,
+            operation: params.operation,
+        });
         return createdOTP.otp;
     } catch (error) {
-        console.error(`Failed to get generate new OTP. Email id: ${email}`);
+        console.error(
+            `Failed to get generate new OTP. Email id: ${params.email}`,
+        );
         console.error(error);
         return null;
     }

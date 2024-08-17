@@ -5,12 +5,14 @@ import type { ZodError } from "zod";
 import { getFormattedZodErrors, logURL } from "#utils";
 import {
     API_ERROR_MAP,
+    EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
 
 import { AuthSignupRequest, type TAuthSignupRequest } from "#schemas";
 import { generateNewOTPForEmail, sendMail } from "#helpers";
+import UserModel from "#models/UserModel";
 
 async function signup(req: Request, res: Response) {
     logURL(req);
@@ -41,10 +43,21 @@ async function signup(req: Request, res: Response) {
         delete userDetails.confirmPassword;
         const userArgs = userDetails as TAuthSignupRequest;
 
-        const otp = await generateNewOTPForEmail(
-            userArgs.email,
-            userArgs.password,
-        );
+        const user = await UserModel.findOne({ email: userArgs.email });
+        if (!_.isEmpty(user)) {
+            return res.status(EServerResponseCodes.CONFLICT).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message:
+                    "Email already taken, please use a different email or login",
+                error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: User already exist`,
+            });
+        }
+
+        const otp = await generateNewOTPForEmail({
+            email: userArgs.email,
+            password: userArgs.password,
+            operation: EOTPOperation.SIGNUP,
+        });
 
         if (!otp) {
             return res.status(EServerResponseCodes.CONFLICT).json({

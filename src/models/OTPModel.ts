@@ -16,16 +16,25 @@ export const OTPSchema = new Schema(
             unique: [true],
             lowercase: [true], // converts the value to lower case before storing
         },
+        newEmail: {
+            type: String,
+            lowercase: [true], // converts the value to lower case before storing
+        },
         otp: {
             type: Number,
             unique: [true],
+            required: [true, "OTP is required"],
         },
         password: {
             type: String,
         },
+        operation: {
+            type: Number,
+            required: [true, "A valid operation is required"],
+        },
 
-        // deletes the otp automatically at 1 minute (50 seconds to account for latency)
-        createdAt: { type: Date, default: Date.now, expires: "50s" },
+        // deletes the otp automatically after one day - manually delete after successful operation
+        createdAt: { type: Date, default: Date.now, expires: "1d" },
     },
     { timestamps: true },
 );

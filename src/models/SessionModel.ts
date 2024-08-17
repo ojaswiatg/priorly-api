@@ -35,6 +35,6 @@ SessionSchema.set("toJSON", {
     virtuals: true,
 });
 
-const SessionModel = mongoose.model("Users", SessionSchema);
+const SessionModel = mongoose.model("Sessions", SessionSchema);
 
 export default SessionModel;
