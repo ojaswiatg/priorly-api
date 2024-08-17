@@ -1,9 +1,17 @@
-import mongoose, { Schema, type CallbackError } from "mongoose";
+import mongoose, { Schema, type CallbackError, Document } from "mongoose";
 import bcrypt from "bcrypt";
 
 import TodoModel from "./TodoModel";
 import SessionModel from "./SessionModel";
 
+interface IUser extends Document {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    createdOn: number;
+    updatedOn: number;
+}
 export const UserSchema = new Schema(
     {
         email: {
@@ -30,6 +38,7 @@ UserSchema.virtual("id").get(function () {
 UserSchema.virtual("createdOn").get(function () {
     return new Date(this.createdAt).getTime() / 1000;
 });
+
 UserSchema.virtual("updatedOn").get(function () {
     return new Date(this.updatedAt).getTime() / 1000;
 });
@@ -89,6 +98,6 @@ UserSchema.pre("findOneAndDelete", async function (next) {
     }
 });
 
-const UserModel = mongoose.model("Users", UserSchema);
+const UserModel = mongoose.model<IUser>("Users", UserSchema);
 
 export default UserModel;

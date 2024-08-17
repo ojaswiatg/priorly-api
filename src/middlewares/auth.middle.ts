@@ -8,6 +8,39 @@ import {
 } from "#constants";
 
 import UserModel from "#models/UserModel";
+import SessionModel from "#models/SessionModel";
+
+export async function isUserAuthenticated(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    const sid = req.cookies.sid;
+
+    try {
+        const session = await SessionModel.findById(sid);
+        if (!sid || _.isEmpty(session)) {
+            return res.status(EServerResponseCodes.FORBIDDEN).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "Please log in to continue",
+                error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
+            });
+        }
+
+        const userId = session.userId;
+        req.params.userId = userId;
+
+        next();
+    } catch (error) {
+        console.error("Internal server error. Path: auth/isUserAuthenticated");
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to verify user credentials",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
+        });
+    }
+}
 
 export async function isEmailAlreadyTaken(
     req: Request,

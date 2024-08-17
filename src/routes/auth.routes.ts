@@ -8,5 +8,9 @@ const router = Router();
 
 // middlewares to check - isUserAlreadyLoggedIn, canUserSendAnotherOTP
 router.post("/signup", isEmailAlreadyTaken, AuthController.signup); // sends an email caught by /user/signup
+// login
+// logout
+// forgot password
+// change email
 
 export default router;

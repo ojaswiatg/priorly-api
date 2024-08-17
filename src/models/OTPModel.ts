@@ -45,34 +45,26 @@ OTPSchema.virtual("id").get(function () {
 });
 
 // Not allowing any udpates
-OTPSchema.pre("findOneAndUpdate", async function (next) {
-    next(
-        new Error(
-            "findOneAndUpdate: Updates are not allowed for OTP documents.",
-        ),
+OTPSchema.pre("findOneAndUpdate", async function () {
+    throw new Error(
+        "findOneAndUpdate: Updates are not allowed for OTP documents",
     );
 });
 
-OTPSchema.pre("updateOne", async function (next) {
-    next(
-        new Error(
-            "findOneAndUpdate: Updates are not allowed for OTP documents.",
-        ),
+OTPSchema.pre("updateOne", async function () {
+    throw new Error(
+        "findOneAndUpdate: Updates are not allowed for OTP documents",
     );
 });
 
-OTPSchema.pre("updateMany", async function (next) {
-    next(
-        new Error(
-            "findOneAndUpdate: Updates are not allowed for OTP documents.",
-        ),
-    );
+OTPSchema.pre("updateMany", async function () {
+    throw new Error("updateMany: Updates are not allowed for OTP documents");
 });
 
 OTPSchema.pre("save", async function (next) {
     // Not allowing any updates for this document via save method
     if (!this.isNew) {
-        next(new Error("save: Updates are not allowed for OTP documents."));
+        throw new Error("save: Updates are not allowed for OTP documents.");
     }
 
     // Hashing passwords before save
@@ -80,6 +72,7 @@ OTPSchema.pre("save", async function (next) {
         const salt = await bcrypt.genSalt(); // generates a salt
         this.password = await bcrypt.hash(this.password, salt); // hashes the password
     }
+    next();
 });
 
 // Ensure virtual fields are serialised.

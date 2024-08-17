@@ -4,16 +4,16 @@ import SessionModel from "#models/SessionModel";
 import OTPModel from "#models/OTPModel";
 import { getCurrentTimestamp } from "#utils";
 import type { EOTPOperation } from "#constants";
+import UserModel from "#models/UserModel";
 
 // Sessions
 export async function createNewUserSession(email: string) {
-    try {
-        const session = await SessionModel.create({ email });
-        return session.id;
-    } catch (error) {
-        console.error(`Failed to create user session. Email id: ${email}`);
-        console.error(error);
+    const user = await UserModel.findOne({ email });
+    if (_.isEmpty(user)) {
+        throw new Error("Cannot find any user with this email");
     }
+    const session = await SessionModel.create({ user: user.id });
+    return session.id;
 }
 
 export async function invalidateUserSessionById(sessionId: string) {
@@ -31,25 +31,25 @@ export async function invalidateUserSessionById(sessionId: string) {
     }
 }
 
-export async function invalidateAllSessionsByEmail(email: string) {
+export async function invalidateAllSessionsByUserId(userId: string) {
     try {
-        const deleted = await SessionModel.deleteMany({ email });
+        const deleted = await SessionModel.deleteMany({ userId });
         if (_.isEmpty(deleted)) {
             return false;
         }
         return true;
     } catch (error) {
-        console.error(`Failed to invlaidate all sessions. email id: ${email}`);
+        console.error(`Failed to invlaidate all sessions. user id: ${userId}`);
     }
 }
 
-export async function getEmailBySessionId(sessionId: string) {
+export async function getUserBySessionId(sessionId: string) {
     try {
         const session = await SessionModel.findById(sessionId);
         if (_.isEmpty(session)) {
             return null;
         }
-        return session.id;
+        return session.user;
     } catch (error) {
         console.error(
             `Failed to get email id by session id. Session id: ${sessionId}`,
@@ -57,9 +57,9 @@ export async function getEmailBySessionId(sessionId: string) {
     }
 }
 
-export async function getSessionIdsByEmail(email: string) {
+export async function getSessionIdsByUserId(userId: string) {
     try {
-        const sessions = await SessionModel.find({ email });
+        const sessions = await SessionModel.find({ userId });
         if (_.isEmpty(sessions)) {
             return null;
         }
@@ -68,13 +68,13 @@ export async function getSessionIdsByEmail(email: string) {
         });
     } catch (error) {
         console.error(
-            `Failed to get session ids by email id. Email id: ${email}`,
+            `Failed to get session ids by user id. user id: ${userId}`,
         );
     }
 }
 
-export async function isUserLoggedIn(email: string, sessionId: string) {
-    const sessions = await getSessionIdsByEmail(email);
+export async function isUserLoggedIn(userId: string, sessionId: string) {
+    const sessions = await getSessionIdsByUserId(userId);
     if (_.includes(sessions, sessionId)) {
         return true;
     }

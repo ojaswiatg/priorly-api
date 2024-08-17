@@ -15,6 +15,14 @@ import { generateNewOTPForEmail, sendMail } from "#helpers";
 
 async function signup(req: Request, res: Response) {
     logURL(req);
+    if (req.cookies.sid) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please log out to continue",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
+        });
+    }
+
     let userDetails = req.body;
 
     if (_.isEmpty(userDetails)) {
