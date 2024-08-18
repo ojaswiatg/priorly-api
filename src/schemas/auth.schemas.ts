@@ -22,8 +22,8 @@ export const AuthSignupRequest = z
 
 export const AuthLoginRequest = z
     .object({
-        email: userEmailSchema,
-        password: userPasswordSchema,
+        email: z.string(),
+        password: z.string(),
     })
     .strict();
 

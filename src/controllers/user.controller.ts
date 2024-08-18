@@ -4,13 +4,20 @@ import {
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
-import { sendMail } from "#helpers";
+import { createNewUserSession, sendMail } from "#helpers";
 import OTPModel from "#models/OTPModel";
 import UserModel from "#models/UserModel";
 import { UserCreateSchema } from "#schemas";
 import { logURL } from "#utils";
-import type { Request, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import _ from "lodash";
+
+const AUTH_COOKIE: CookieOptions = {
+    secure: true,
+    httpOnly: true,
+    maxAge: 3 * 24 * 60 * 60, // expires in 3 days
+    sameSite: "strict",
+};
 
 export async function signup(req: Request, res: Response) {
     logURL(req);
@@ -62,7 +69,7 @@ export async function signup(req: Request, res: Response) {
             email: parsedUserDetails.email,
             password: parsedUserDetails.password,
         };
-        await UserModel.create(newUser);
+        const createdUser = await UserModel.create(newUser);
 
         // delete the otp synchronously
         OTPModel.deleteOne({ otp }).catch((error) => {
@@ -70,7 +77,25 @@ export async function signup(req: Request, res: Response) {
             console.error(error);
         });
 
-        // send main synchronously
+        // Try to create session for user, if sid is there in response cookie, redirect to dashboard, else redirect to login page
+        let sid;
+        try {
+            sid = await createNewUserSession(createdUser.id);
+            if (!sid) {
+                return res
+                    .status(EServerResponseCodes.INTERNAL_SERVER_ERROR)
+                    .json({
+                        rescode: EServerResponseRescodes.ERROR,
+                        message: "Failed to login",
+                        error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session creation failed`,
+                    });
+            }
+        } catch (error) {
+            console.error("user/signup: Failed to create user session");
+            console.error(error);
+        }
+
+        // send mail synchronously
         const clientURI = String(process.env.CLIENT_URI);
         sendMail({
             emailTo: userDetails?.email ?? "",
@@ -83,10 +108,13 @@ export async function signup(req: Request, res: Response) {
             methodName: "user/signup",
         });
 
-        return res.status(EServerResponseCodes.CREATED).json({
-            rescode: EServerResponseRescodes.SUCCESS,
-            message: "User created successfully",
-        });
+        return res
+            .cookie("sid", sid, AUTH_COOKIE)
+            .status(EServerResponseCodes.CREATED)
+            .json({
+                rescode: EServerResponseRescodes.SUCCESS,
+                message: "User registered successfully",
+            });
     } catch (error) {
         console.error(error);
         // Since we stored data in the OTP table, we are responsible, hence internal server error

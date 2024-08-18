@@ -13,7 +13,7 @@ interface ISession extends Document {
 export const SessionSchema = new Schema(
     {
         user: { type: Schema.Types.ObjectId, ref: "Users", required: true },
-        email: { type: String },
+        email: { type: String, unique: false },
     },
     { timestamps: true },
 );
@@ -24,7 +24,7 @@ SessionSchema.virtual("id").get(function () {
 });
 
 SessionSchema.virtual("userId").get(function () {
-    return this.user.id;
+    return this.user._id.toHexString();
 });
 
 SessionSchema.virtual("createdOn").get(function () {
@@ -55,16 +55,16 @@ SessionSchema.pre("save", async function (next) {
         throw new Error("save: Updates are not allowed for session documents");
     } else {
         try {
-            const user = await UserModel.findById(this.user.id);
+            const user = await UserModel.findById(this.user._id);
             if (_.isEmpty(user)) {
                 throw new Error(
-                    `User not found with this user id: ${this.user.id}`,
+                    `User not found with this user id: ${this.user._id}`,
                 );
             }
             this.email = user.email;
             next();
         } catch (error) {
-            console.error("Could not create session for user: ", this.user.id);
+            console.error("Failed to create session for user: ", this.user._id);
             console.error(error);
         }
     }

@@ -55,15 +55,15 @@ UserSchema.post("save", function (_doc, next) {
     next(); // this is important for control flow
 });
 
-// Pre means before creation
-UserSchema.pre("save", async function (next) {
-    // We don't get the saved "document" in pre hooks, we get the "this" keyword.
+// Pre means before creation - The below function already being handled by the OTP table - no use here
+// UserSchema.pre("save", async function (next) {
+//     // We don't get the saved "document" in pre hooks, we get the "this" keyword.
 
-    const salt = await bcrypt.genSalt(); // generates a salt
-    this.password = await bcrypt.hash(this.password, salt); // hashes the password
+//     const salt = await bcrypt.genSalt(); // generates a salt
+//     this.password = await bcrypt.hash(this.password, salt); // hashes the password
 
-    next();
-});
+//     next();
+// });
 
 UserSchema.pre("findOneAndUpdate", async function (next) {
     try {

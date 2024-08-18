@@ -7,6 +7,10 @@
 5. Validate the otp with callers email address and operation.
 6. If validation successful then perform the operation.
 
+## API Testing
+
+1. Test if deleting users **from query** is deleting all the sessions and todos or not
+
 ## Client
 
 1. Have a user store where user details such as name and email is stored - useful for calling different APIs.

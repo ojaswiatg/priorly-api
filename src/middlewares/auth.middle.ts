@@ -5,8 +5,10 @@ import {
 } from "#constants";
 import SessionModel from "#models/SessionModel";
 import UserModel from "#models/UserModel";
+import { logURL } from "#utils";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
+import { isValidObjectId } from "mongoose";
 
 export async function isUserAuthenticated(
     req: Request,
@@ -30,7 +32,7 @@ export async function isUserAuthenticated(
 
         next();
     } catch (error) {
-        console.error("Internal server error. Path: auth/isUserAuthenticated");
+        logURL(req);
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
@@ -61,10 +63,45 @@ export async function isEmailAlreadyTaken(
             });
         }
     } catch (error) {
+        logURL(req);
+        console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}`,
             message: "Faild to verify details, please try again later",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to verify credentials`,
+        });
+    }
+}
+
+export async function isUserAlreadyLoggedIn(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    const sid = req.cookies.sid;
+    if (!sid || !isValidObjectId(sid)) {
+        next();
+        return;
+    }
+
+    try {
+        const session = await SessionModel.findById(sid);
+        if (!_.isEmpty(session)) {
+            return res.status(EServerResponseCodes.BAD_REQUEST).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "Please log out to continue",
+                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
+            });
+        } else {
+            next();
+        }
+    } catch (error) {
+        logURL(req);
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to verify user credentials",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
         });
     }
 }

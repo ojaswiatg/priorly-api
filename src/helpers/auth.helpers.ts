@@ -9,67 +9,44 @@ import _ from "lodash";
 export async function createNewUserSession(userId: string) {
     const user = await UserModel.findById(userId);
     if (_.isEmpty(user)) {
-        throw new Error(`Cannot find any user with this user id: ${userId}`);
+        return null;
     }
-    const session = await SessionModel.create({ user: user.id });
-    return session.id;
+    const session = await SessionModel.create({ user: userId });
+    return session.id as string;
 }
 
 export async function invalidateUserSessionById(sessionId: string) {
-    try {
-        const session = await SessionModel.findByIdAndDelete(sessionId);
-        if (_.isEmpty(session)) {
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error(
-            `Failed to invalidate the session. Session id: ${sessionId}`,
-        );
+    const session = await SessionModel.findByIdAndDelete(sessionId);
+    if (_.isEmpty(session)) {
         return false;
     }
+    return true;
 }
 
 export async function invalidateAllSessionsByUserId(userId: string) {
-    try {
-        const deleted = await SessionModel.deleteMany({ userId });
-        if (_.isEmpty(deleted)) {
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error(`Failed to invlaidate all sessions. user id: ${userId}`);
+    const deleted = await SessionModel.deleteMany({ userId });
+    if (_.isEmpty(deleted)) {
+        return false;
     }
+    return true;
 }
 
 export async function getUserBySessionId(sessionId: string) {
-    try {
-        const session = await SessionModel.findById(sessionId);
-        if (_.isEmpty(session)) {
-            return null;
-        }
-        return session.user;
-    } catch (error) {
-        console.error(
-            `Failed to get email id by session id. Session id: ${sessionId}`,
-        );
+    const session = await SessionModel.findById(sessionId);
+    if (_.isEmpty(session)) {
+        return null;
     }
+    return session.user;
 }
 
 export async function getSessionIdsByUserId(userId: string) {
-    try {
-        const sessions = await SessionModel.find({ userId });
-        if (_.isEmpty(sessions)) {
-            return null;
-        }
-        return _.map(sessions, (session) => {
-            return session.id;
-        });
-    } catch (error) {
-        console.error(
-            `Failed to get session ids by user id. user id: ${userId}`,
-        );
+    const sessions = await SessionModel.find({ userId });
+    if (_.isEmpty(sessions)) {
+        return null;
     }
+    return _.map(sessions, (session) => {
+        return session.id;
+    });
 }
 
 export async function isUserLoggedIn(userId: string, sessionId: string) {
@@ -101,6 +78,7 @@ async function canUserSendOTP(email: string) {
 
         return false;
     } catch (error) {
+        console.error("helper/auth: canUserSendOTP");
         console.error(
             `Failed to check if user can send OTP. Email id: ${email}`,
         );
@@ -155,6 +133,7 @@ export async function generateNewOTPForEmail(
         });
         return createdOTP.otp;
     } catch (error) {
+        console.error("helper/auth: generateNewOTPForEmail");
         console.error(
             `Failed to get generate new OTP. Email id: ${params.email}`,
         );
@@ -168,6 +147,7 @@ export async function deleteOTPForUser(email: string) {
         await OTPModel.deleteMany({ email });
         return true;
     } catch (error) {
+        console.error("helper/auth: deleteOTPForUser");
         console.error(`Failed to delete user OTP. Email id: ${email}`);
         return false;
     }
@@ -181,6 +161,7 @@ export async function isValidOTPForUser(email: string, otp: number) {
         }
         return false;
     } catch (error) {
+        console.error("helper/auth: isValidOTPForUser");
         console.error(`Failed to check user OTP. Email id: ${email}`);
         return false;
     }
