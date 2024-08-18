@@ -32,21 +32,25 @@ export const userPasswordSchema = z
     });
 
 // Requests
-export const UserCreateSchema = z
-    // we will get these values from the OTP Table
+export const UserCreateSchema = z.object({
+    otp: z.number(),
+    email: userEmailSchema,
+    name: userNameSchema,
+});
+
+export const ValidateOTPSchema = z.object({
+    otp: z.number(),
+    email: userEmailSchema,
+    operation: z.nativeEnum(EOTPOperation),
+});
+
+export const UserChangeForgotPasswordSchema = z
     .object({
         otp: z.number(),
         email: userEmailSchema,
-        name: userNameSchema,
-        password: z.string(), // getting from OTP Table, already hashed
-        operation: z.nativeEnum(EOTPOperation),
-    }); // internal operation - no need to apply strict
-
-export const UserChangePasswordRequestSchema = z
-    .object({
-        otp: z.number().nullish(),
         password: userPasswordSchema,
         confirmPassword: userPasswordSchema,
+        operation: z.nativeEnum(EOTPOperation),
     })
 
     .refine((data) => data.password === data.confirmPassword, {
@@ -54,15 +58,18 @@ export const UserChangePasswordRequestSchema = z
         path: ["confirmPassword"],
     });
 
-export const UserChangeNameSchema = z.object({
-    newName: userNameSchema,
+export const UserChangeEmailSchema = z.object({
+    otp: z.number(),
+    email: userEmailSchema,
+    newEmail: userEmailSchema,
+    password: z.string(),
 });
 
 export type TUserCreateSchema = z.infer<typeof UserCreateSchema>;
-export type TUserChangePasswordRequestSchema = z.infer<
-    typeof UserChangePasswordRequestSchema
+export type TUserChangeForgotPasswordSchema = z.infer<
+    typeof UserChangeForgotPasswordSchema
 >;
-export type TUserChangeNameSchema = z.infer<typeof UserChangeNameSchema>;
+export type TValidateOTPSchema = z.infer<typeof ValidateOTPSchema>;
 
 // Responses
 export const UserDetailsResponseSchema = z.object({

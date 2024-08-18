@@ -26,6 +26,7 @@ export const AuthLoginRequest = z.object({
 });
 
 export const AuthChangeEmailRequestSchema = z.object({
+    email: userEmailSchema,
     newEmail: userEmailSchema,
 });
 

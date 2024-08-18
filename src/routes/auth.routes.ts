@@ -9,7 +9,6 @@ import { Router } from "express";
 
 const router = Router();
 
-// middlewares to check - isUserAlreadyLoggedIn, canUserSendAnotherOTP
 router.post(
     "/signup",
     isUserAlreadyLoggedIn,
@@ -32,6 +31,12 @@ router.get(
 );
 
 router.post("/forgot", doesUserExist, AuthController.forgotPassword); // sends an email caught by /user/forgot
-// change email
+router.post(
+    "/change",
+    isUserAuthenticated,
+    doesUserExist,
+    isEmailAlreadyTaken,
+    AuthController.changeEmail,
+); // sends an email caught by /user/change/email
 
 export default router;

@@ -171,7 +171,7 @@ async function login(req: Request, res: Response) {
 async function logout(req: Request, res: Response) {
     logURL(req);
 
-    const sid = req.params.sid; // sid is guranteed from the isUserAuthenticated middleware
+    const sid = req.params.sid; // sid is guranteed bythe isUserAuthenticated middleware
 
     try {
         await SessionModel.findByIdAndDelete(sid);
@@ -195,7 +195,7 @@ async function logout(req: Request, res: Response) {
 async function logoutAllSessions(req: Request, res: Response) {
     logURL(req);
 
-    const userId = req.params.userId; // userId is guranteed from the isUserAuthenticated middleware
+    const userId = req.params.userId; // userId is guranteed bythe isUserAuthenticated middleware
 
     try {
         await SessionModel.deleteMany({ user: userId });
@@ -214,9 +214,10 @@ async function logoutAllSessions(req: Request, res: Response) {
 }
 
 async function forgotPassword(req: Request, res: Response) {
-    // all error handling are being done by the individual methods
+    logURL(req);
 
-    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guranteed from doesUserExist middleware
+    // all error handling are being done by the individual methods
+    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guranteed bydoesUserExist middleware
 
     const otp = await generateNewOTPForEmail({
         email: foundUser.email,
@@ -233,12 +234,50 @@ async function forgotPassword(req: Request, res: Response) {
 
     sendMail({
         emailTo: foundUser.email,
-        subject: "Password change request",
+        subject: "Priorly - Password change request",
         templateFileName: "forgot-password",
         context: {
             otp,
         },
         methodName: "auth/forgotPassword",
+    });
+
+    return res.status(EServerResponseCodes.OK).json({
+        rescode: EServerResponseRescodes.SUCCESS,
+        message:
+            "Verification code sent, please check your email's inbox and spam folders",
+    });
+}
+
+async function changeEmail(req: Request, res: Response) {
+    logURL(req);
+
+    // all error handling are being done by the individual methods
+    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from doesUserExist middleware
+    const newEmail = req.body.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
+
+    const otp = await generateNewOTPForEmail({
+        email: foundUser.email,
+        newEmail,
+        operation: EOTPOperation.CHANGE_EMAIL,
+    });
+
+    if (!otp) {
+        return res.status(EServerResponseCodes.CONFLICT).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please wait for some time before requesting a new OTP",
+            error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: OTP already requested`,
+        });
+    }
+
+    sendMail({
+        emailTo: newEmail,
+        subject: "Email change request",
+        templateFileName: "change-email",
+        context: {
+            otp,
+        },
+        methodName: "auth/changeEmail",
     });
 
     return res.status(EServerResponseCodes.OK).json({
@@ -254,4 +293,5 @@ export default {
     logout,
     logoutAllSessions,
     forgotPassword,
+    changeEmail,
 };

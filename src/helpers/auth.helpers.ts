@@ -90,9 +90,9 @@ async function canUserSendOTP(email: string) {
 interface IGenerateNewOTPForEmailParams {
     email: string;
     name?: string;
+    newEmail?: string;
     operation: EOTPOperation;
     password?: string;
-    newEmail?: string;
 }
 
 export async function generateNewOTPForEmail(
@@ -127,10 +127,7 @@ export async function generateNewOTPForEmail(
         // create new otp
         const createdOTP = await OTPModel.create({
             otp,
-            email: params.email,
-            name: params.name,
-            password: params.password,
-            operation: params.operation,
+            ...params,
         });
         return createdOTP.otp;
     } catch (error) {

@@ -7,6 +7,7 @@ interface IOTP extends Document {
     name?: string;
     otp: number;
     password?: string;
+    newEmail?: string;
     createdOn: number;
     operation: EOTPOperation;
 }

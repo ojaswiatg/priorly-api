@@ -47,7 +47,6 @@ export async function isUserAuthenticated(
 
         req.params.userId = session.userId;
         req.params.email = session.email;
-        req.params.sid = req.cookies.sid;
 
         next();
     } catch (error) {
@@ -66,7 +65,17 @@ export async function isEmailAlreadyTaken(
     res: Response,
     next: NextFunction,
 ) {
-    const email = req.body.email as string;
+    // if new email is there then we check is email already taken with new email - in case of email change
+    const email = (req.body.newEmail || req.body.email) as string;
+
+    const isValidEmail = userEmailSchema.safeParse(email).success;
+    if (!isValidEmail) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please enter a valid email",
+            error: `${EServerResponseCodes.BAD_REQUEST}: Invalid email id`,
+        });
+    }
 
     try {
         const user = await UserModel.findOne({ email: email });
@@ -77,7 +86,7 @@ export async function isEmailAlreadyTaken(
             return res.status(EServerResponseCodes.CONFLICT).json({
                 rescode: EServerResponseRescodes.ERROR,
                 message:
-                    "Email already taken, please use a different email or login",
+                    "This email is already taken, please use a different email",
                 error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: Email already taken`,
             });
         }
