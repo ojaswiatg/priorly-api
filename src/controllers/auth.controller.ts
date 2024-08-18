@@ -235,7 +235,7 @@ async function forgotPassword(req: Request, res: Response) {
     sendMail({
         emailTo: foundUser.email,
         subject: "Password change request",
-        templateFileName: "pre-forgot-password",
+        templateFileName: "forgot-password",
         context: {
             otp,
         },
