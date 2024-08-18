@@ -258,7 +258,6 @@ async function changeEmail(req: Request, res: Response) {
 
     const otp = await generateNewOTPForEmail({
         email: foundUser.email,
-        newEmail,
         operation: EOTPOperation.CHANGE_EMAIL,
     });
 
@@ -272,7 +271,7 @@ async function changeEmail(req: Request, res: Response) {
 
     sendMail({
         emailTo: newEmail,
-        subject: "Email change request",
+        subject: "Priorly - Email change request",
         templateFileName: "change-email",
         context: {
             otp,

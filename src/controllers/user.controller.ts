@@ -123,7 +123,7 @@ export async function forgotPassword(req: Request, res: Response) {
         // guranteed by validateOTP middleware
         otp: Number(req.params.otp),
         email: req.params.email,
-        password: req.params.password,
+        password: req.body.password,
         confirmPassword: req.body.confirmPassword,
     };
 
@@ -210,7 +210,7 @@ export async function changeEmail(req: Request, res: Response) {
         // guaranteed by validateOTP middleware
         otp: Number(req.params.otp),
         email: req.params.email,
-        newEmail: req.params.newEmail,
+        newEmail: req.body.newEmail,
         password: req.body.password,
     };
 
@@ -225,7 +225,7 @@ export async function changeEmail(req: Request, res: Response) {
     }
 
     const operation = Number(req.params.operation);
-    if (operation !== EOTPOperation.FORGOT_PASSWORD) {
+    if (operation !== EOTPOperation.CHANGE_EMAIL) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Please enter a valid OTP",
@@ -267,7 +267,7 @@ export async function changeEmail(req: Request, res: Response) {
         // send email to old and new synchronously
         sendMail({
             emailTo: userDetails.email,
-            subject: "Your Priorly password was changed",
+            subject: "Your Priorly email was changed",
             templateFileName: "email-changed-old",
             context: {
                 newEmail: updatedUser.email,
@@ -277,10 +277,15 @@ export async function changeEmail(req: Request, res: Response) {
 
         sendMail({
             emailTo: updatedUser.email,
-            subject: "Your Priorly password was changed",
+            subject: "Your Priorly email was changed",
             templateFileName: "email-changed-new",
             context: {},
             methodName: "user/changeEmail",
+        });
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Email changed successfully",
         });
     } catch (error) {
         console.error(error);

@@ -7,7 +7,6 @@ interface IOTP extends Document {
     name?: string;
     otp: number;
     password?: string;
-    newEmail?: string;
     createdOn: number;
     operation: EOTPOperation;
 }
@@ -21,10 +20,6 @@ export const OTPSchema = new Schema(
             lowercase: [true], // converts the value to lower case before storing
         },
         name: { type: String, required: false, default: "" },
-        newEmail: {
-            type: String,
-            lowercase: [true], // converts the value to lower case before storing
-        },
         otp: {
             type: Number,
             unique: [true],

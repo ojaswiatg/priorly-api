@@ -38,7 +38,6 @@ export async function validateOTP(
             otp: otpDetails.otp.toString(),
             email: userDetails.email,
             name: userDetails.name ?? "",
-            newEmail: userDetails.newEmail ?? "",
             password: userDetails.password ?? "",
             operation: userDetails.operation.toString(),
         };
