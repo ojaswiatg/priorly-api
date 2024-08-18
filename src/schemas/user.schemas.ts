@@ -42,8 +42,9 @@ export const UserCreateSchema = z
         operation: z.nativeEnum(EOTPOperation),
     }); // internal operation - no need to apply strict
 
-export const UserChangePasswordSchema = z
+export const UserChangePasswordRequestSchema = z
     .object({
+        otp: z.number().nullish(),
         password: userPasswordSchema,
         confirmPassword: userPasswordSchema,
     })
@@ -58,8 +59,8 @@ export const UserChangeNameSchema = z.object({
 });
 
 export type TUserCreateSchema = z.infer<typeof UserCreateSchema>;
-export type TUserChangePasswordSchema = z.infer<
-    typeof UserChangePasswordSchema
+export type TUserChangePasswordRequestSchema = z.infer<
+    typeof UserChangePasswordRequestSchema
 >;
 export type TUserChangeNameSchema = z.infer<typeof UserChangeNameSchema>;
 

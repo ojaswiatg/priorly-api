@@ -7,5 +7,6 @@ import { Router } from "express";
 const router = Router();
 
 router.post("/signup", UserController.signup); // catches an email sent by /auth/signup
+router.post("/forgot", UserController.forgotPassword); // catches and email sent by /auth/forgot
 
 export default router;

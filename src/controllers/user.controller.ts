@@ -8,24 +8,27 @@ import {
 import { createNewUserSession, sendMail } from "#helpers";
 import OTPModel from "#models/OTPModel";
 import UserModel from "#models/UserModel";
-import { UserCreateSchema } from "#schemas";
-import { logURL } from "#utils";
+import {
+    UserChangePasswordRequestSchema,
+    type TUserChangePasswordRequestSchema,
+} from "#schemas";
+import { getFormattedZodErrors, logURL } from "#utils";
 import type { Request, Response } from "express";
 import _ from "lodash";
 
 export async function signup(req: Request, res: Response) {
     logURL(req);
     const otp = req.body.otp as number;
-    const email = req.body.email as string;
 
     let userDetails;
 
-    // When no OTP or email (store in client Store) is there
-    if (!otp || !email) {
+    // When no OTP is there
+    if (!otp || typeof otp !== "number") {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "One time password is required to create a new user",
-            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: OTP Required`,
+            message:
+                "A valid one time password is required to create a new user",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Valid OTP Required`,
         });
     }
 
@@ -35,7 +38,6 @@ export async function signup(req: Request, res: Response) {
         // Checking for valid otp conditions and user details
         if (
             _.isEmpty(userDetails) ||
-            email !== userDetails.email ||
             userDetails.operation !== EOTPOperation.SIGNUP
         ) {
             return res.status(EServerResponseCodes.BAD_REQUEST).json({
@@ -54,21 +56,25 @@ export async function signup(req: Request, res: Response) {
     }
 
     try {
-        // Checking for valid user details by parsing through zod schema
-        const parsedUserDetails = UserCreateSchema.parse(userDetails);
-
         // if everything is fine, we create a new user
         const newUser = {
-            name: parsedUserDetails.name,
-            email: parsedUserDetails.email,
-            password: parsedUserDetails.password,
+            name: userDetails.name,
+            email: userDetails.email,
+            password: userDetails.password,
         };
         const createdUser = await UserModel.create(newUser);
 
-        // delete the otp synchronously
-        OTPModel.deleteOne({ otp }).catch((error) => {
-            console.error("Failed to delete last OTP");
-            console.error(error);
+        // send mail synchronously
+        const clientURI = String(process.env.CLIENT_URI);
+        sendMail({
+            emailTo: newUser.email,
+            subject: "Welcome to Priorly!",
+            templateFileName: "welcome",
+            context: {
+                loginLink: `${clientURI}/login`,
+                wikiLink: `${clientURI}/wiki/eisen-matrix`,
+            },
+            methodName: "user/signup",
         });
 
         // Try to create session for user, if sid is there in response cookie, redirect to dashboard, else redirect to login page
@@ -89,19 +95,7 @@ export async function signup(req: Request, res: Response) {
             console.error(error);
         }
 
-        // send mail synchronously
-        const clientURI = String(process.env.CLIENT_URI);
-        sendMail({
-            emailTo: userDetails?.email ?? "",
-            subject: "Welcome to Priorly!",
-            templateFileName: "welcome",
-            context: {
-                loginLink: `${clientURI}/login`,
-                wikiLink: `${clientURI}/wiki/eisen-matrix`,
-            },
-            methodName: "user/signup",
-        });
-
+        // return response
         return res
             .cookie("sid", sid, AUTH_COOKIE)
             .status(EServerResponseCodes.CREATED)
@@ -117,9 +111,111 @@ export async function signup(req: Request, res: Response) {
             message: "Failed to create user",
             error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to verify user details`,
         });
+    } finally {
+        // delete the otp synchronously
+        OTPModel.deleteOne({ otp }).catch((error) => {
+            console.error("Failed to delete last OTP");
+            console.error(error);
+        });
+    }
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+    logURL(req);
+    const passwordDetails = req.body as TUserChangePasswordRequestSchema;
+
+    // When no OTP is there
+    if (!passwordDetails.otp || typeof passwordDetails.otp !== "number") {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message:
+                "A valid one time password is required to change forgotten password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Valid OTP Required`,
+        });
+    }
+
+    const isValidRequest =
+        UserChangePasswordRequestSchema.safeParse(passwordDetails);
+
+    if (!isValidRequest.success) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Failed to change password.`,
+            errors: getFormattedZodErrors(isValidRequest.error),
+        });
+    }
+
+    let userDetails;
+    try {
+        userDetails = await OTPModel.findOne({ otp: passwordDetails.otp });
+        if (
+            _.isEmpty(userDetails) ||
+            userDetails.operation !== EOTPOperation.FORGOT_PASSWORD
+        ) {
+            return res.status(EServerResponseCodes.BAD_REQUEST).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "Please enter a valid OTP",
+                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid OTP`,
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: OTP lookup failed`,
+        });
+    }
+
+    try {
+        const updates = { password: passwordDetails.password };
+        const updatedUser = await UserModel.findOneAndUpdate(
+            { email: userDetails.email },
+            { $set: updates },
+            { new: true },
+        );
+        if (_.isEmpty(updatedUser)) {
+            // rare or impractical case, as the email is checked before sending the OTP.
+            return res.status(EServerResponseCodes.NOT_FOUND).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "Failed to change password",
+                error: `${API_ERROR_MAP[EServerResponseCodes.NOT_FOUND]}: User not found`,
+            });
+        }
+
+        // send mail synchronously
+        sendMail({
+            emailTo: userDetails.email,
+            subject: "Your Priorly password was changed",
+            templateFileName: "password-changed",
+            context: {},
+            methodName: "user/forgot",
+        });
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: OTP lookup failed`,
+        });
+    } finally {
+        // delete the otp synchronously
+        if (passwordDetails.otp) {
+            OTPModel.deleteOne({ otp: passwordDetails.otp }).catch((error) => {
+                console.error("Failed to delete last OTP");
+                console.error(error);
+            });
+        }
     }
 }
 
 export default {
     signup,
+    forgotPassword,
 };

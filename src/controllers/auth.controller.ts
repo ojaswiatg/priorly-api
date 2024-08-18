@@ -163,7 +163,7 @@ async function login(req: Request, res: Response) {
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to login",
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to login`,
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: User lookup failed`,
         });
     }
 }
@@ -187,7 +187,7 @@ async function logout(req: Request, res: Response) {
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to logout",
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to logout`,
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
         });
     }
 }
@@ -208,7 +208,7 @@ async function logoutAllSessions(req: Request, res: Response) {
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to logout from all sessions",
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to logout from all sessions`,
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
         });
     }
 }
@@ -220,7 +220,6 @@ async function forgotPassword(req: Request, res: Response) {
 
     const otp = await generateNewOTPForEmail({
         email: foundUser.email,
-        password: foundUser.password,
         operation: EOTPOperation.FORGOT_PASSWORD,
     });
 
