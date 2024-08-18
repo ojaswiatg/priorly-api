@@ -211,7 +211,6 @@ export async function changeEmail(req: Request, res: Response) {
         otp: Number(req.params.otp),
         email: req.params.email,
         newEmail: req.params.newEmail,
-        operation: Number(req.params.operation),
         password: req.body.password,
     };
 
