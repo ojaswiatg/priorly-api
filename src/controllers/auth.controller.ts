@@ -11,7 +11,7 @@ import {
     sendMail,
 } from "#helpers";
 import SessionModel from "#models/SessionModel";
-import UserModel from "#models/UserModel";
+import { UserSchema } from "#models/UserModel";
 import {
     AuthLoginRequest,
     AuthSignupRequest,
@@ -22,6 +22,7 @@ import { getFormattedZodErrors, logURL } from "#utils";
 import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import _ from "lodash";
+import type { InferSchemaType } from "mongoose";
 import type { ZodError } from "zod";
 
 async function signup(req: Request, res: Response) {
@@ -41,7 +42,7 @@ async function signup(req: Request, res: Response) {
     }
 
     try {
-        userDetails = AuthSignupRequest.parse(userDetails);
+        userDetails = AuthSignupRequest.parse(userDetails); // strips unnecessary keys
     } catch (error) {
         const errors = getFormattedZodErrors(error as ZodError);
 
@@ -90,7 +91,7 @@ async function signup(req: Request, res: Response) {
         return res.status(EServerResponseCodes.OK).json({
             rescode: EServerResponseRescodes.SUCCESS,
             message:
-                "Verification code sent, please check your email and spam folders",
+                "Verification code sent, please check your email's inbox and spam folders",
         });
     } catch (error) {
         console.error(error);
@@ -114,9 +115,8 @@ async function login(req: Request, res: Response) {
         });
     }
 
-    try {
-        AuthLoginRequest.parse(userDetails);
-    } catch (error) {
+    const isValidUserDetais = AuthLoginRequest.safeParse(userDetails).success;
+    if (!isValidUserDetais) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to login",
@@ -125,18 +125,12 @@ async function login(req: Request, res: Response) {
     }
 
     try {
-        const { email, password } = userDetails;
-        const foundUser = await UserModel.findOne({ email });
-        if (_.isEmpty(foundUser)) {
-            return res.status(EServerResponseCodes.NOT_FOUND).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: "No user found with this email id",
-                error: `${API_ERROR_MAP[EServerResponseCodes.NOT_FOUND]}: User does not exist`,
-            });
-        }
+        const foundUser = req.body.user as InferSchemaType<
+            typeof UserSchema
+        > & { id: string }; // guaranteed from doesUserExist middleware
 
         const passwordMatched = await bcrypt.compare(
-            password,
+            userDetails.password,
             foundUser.password,
         );
 
@@ -219,9 +213,46 @@ async function logoutAllSessions(req: Request, res: Response) {
     }
 }
 
+async function forgotPassword(req: Request, res: Response) {
+    // all error handling are being done by the individual methods
+
+    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guranteed from doesUserExist middleware
+
+    const otp = await generateNewOTPForEmail({
+        email: foundUser.email,
+        password: foundUser.password,
+        operation: EOTPOperation.FORGOT_PASSWORD,
+    });
+
+    if (!otp) {
+        return res.status(EServerResponseCodes.CONFLICT).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please wait for some time before requesting a new OTP",
+            error: `${API_ERROR_MAP[EServerResponseCodes.CONFLICT]}: OTP already requested`,
+        });
+    }
+
+    sendMail({
+        emailTo: foundUser.email,
+        subject: "Password change request",
+        templateFileName: "pre-forgot-password",
+        context: {
+            otp,
+        },
+        methodName: "auth/forgotPassword",
+    });
+
+    return res.status(EServerResponseCodes.OK).json({
+        rescode: EServerResponseRescodes.SUCCESS,
+        message:
+            "Verification code sent, please check your email's inbox and spam folders",
+    });
+}
+
 export default {
     signup,
     login,
     logout,
     logoutAllSessions,
+    forgotPassword,
 };

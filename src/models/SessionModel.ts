@@ -13,7 +13,6 @@ interface ISession extends Document {
 export const SessionSchema = new Schema(
     {
         user: { type: Schema.Types.ObjectId, ref: "Users", required: true },
-        email: { type: String, unique: false },
     },
     { timestamps: true },
 );
@@ -61,7 +60,6 @@ SessionSchema.pre("save", async function (next) {
                     `User not found with this user id: ${this.user._id}`,
                 );
             }
-            this.email = user.email;
             next();
         } catch (error) {
             console.error("Failed to create session for user: ", this.user._id);

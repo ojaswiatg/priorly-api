@@ -7,54 +7,43 @@ const todoTitleSchema = z
     .min(1, "Title is required")
     .max(60, "Title cannnot be more than 60 characters");
 
-export const TodoCreateRequestSchema = z
-    .object({
-        title: todoTitleSchema,
-    })
-    .strict();
+export const TodoCreateRequestSchema = z.object({
+    title: todoTitleSchema,
+});
 
-export const TodoUpdateChangesSchema = z
-    .object({
-        title: todoTitleSchema.nullish(),
-        description: z
-            .string()
-            .max(300, "Description cannot be more than 300 characters")
-            .nullish(),
+export const TodoUpdateChangesSchema = z.object({
+    title: todoTitleSchema.nullish(),
+    description: z
+        .string()
+        .max(300, "Description cannot be more than 300 characters")
+        .nullish(),
 
-        priority: z.nativeEnum(TODO_PRIORITY).nullish(),
+    priority: z.nativeEnum(TODO_PRIORITY).nullish(),
 
-        isImportant: z.boolean().nullish(),
-        isUrgent: z.boolean().nullish(),
-        isDone: z.boolean().nullish(),
-        isDeleted: z.boolean().nullish(),
+    isImportant: z.boolean().nullish(),
+    isUrgent: z.boolean().nullish(),
+    isDone: z.boolean().nullish(),
+    isDeleted: z.boolean().nullish(),
 
-        deadline: z.number().nullish(),
-        reminder: z.number().nullish(),
-    })
-    .strict();
+    deadline: z.number().nullish(),
+    reminder: z.number().nullish(),
+});
 
-export const TodoUpdateRequestSchema = z
-    .object({
-        changes: TodoUpdateChangesSchema,
-    })
-    .strict();
+export const TodoUpdateRequestSchema = z.object({
+    changes: TodoUpdateChangesSchema,
+});
 
-const TodoAllFilterSchema = z
-    .object({
-        isUrgent: z.boolean().nullish(),
-        isImportant: z.boolean().nullish(),
-        isDeleted: z.boolean().nullish(),
-        isDone: z.boolean().nullish(),
-    })
-    .strict();
-
-export const TodoAllRequestSchema = z
-    .object({
-        cursor: z.number().nullish(),
-        limit: z.number().nullish(),
-        filters: TodoAllFilterSchema.nullish(),
-    })
-    .strict();
+const TodoAllFilterSchema = z.object({
+    isUrgent: z.boolean().nullish(),
+    isImportant: z.boolean().nullish(),
+    isDeleted: z.boolean().nullish(),
+    isDone: z.boolean().nullish(),
+});
+export const TodoAllRequestSchema = z.object({
+    cursor: z.number().nullish(),
+    limit: z.number().nullish(),
+    filters: TodoAllFilterSchema.nullish(),
+});
 
 export const TodoCountRequestSchema = TodoAllRequestSchema.omit({
     cursor: true,
@@ -77,7 +66,7 @@ export const TodoDetailsResponseSchema = TodoUpdateChangesSchema.merge(
         createdOn: z.number().nullish(),
         user: z.string(),
     }),
-).strict();
+);
 
 export const TodoCreateResponseSchema = z.object({
     todo: TodoDetailsResponseSchema,

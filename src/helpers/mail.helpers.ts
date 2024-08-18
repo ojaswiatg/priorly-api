@@ -52,10 +52,12 @@ export async function sendMail(params: ISendMailParams) {
         console.info(
             `${params.methodName}: Mail sent successfuly to ${params.emailTo}`,
         );
+        return true;
     } catch (error) {
         console.error(
             `${params.methodName}: Failed to send mail to ${params.emailTo}`,
         );
         console.error(error);
+        return false;
     }
 }

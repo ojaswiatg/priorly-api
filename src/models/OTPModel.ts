@@ -4,9 +4,9 @@ import mongoose, { Document, Schema } from "mongoose";
 
 interface IOTP extends Document {
     email: string;
-    name: string;
+    name?: string;
     otp: number;
-    password: string;
+    password?: string;
     createdOn: number;
     operation: EOTPOperation;
 }

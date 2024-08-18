@@ -14,24 +14,16 @@ export const AuthSignupRequest = z
         password: userPasswordSchema,
         confirmPassword: userPasswordSchema,
     })
-    .strict()
+
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords do not match",
         path: ["confirmPassword"],
     });
 
-export const AuthLoginRequest = z
-    .object({
-        email: z.string(),
-        password: z.string(),
-    })
-    .strict();
-
-export const AuthForgotPasswordSchema = z
-    .object({
-        email: userEmailSchema,
-    })
-    .strict();
+export const AuthLoginRequest = z.object({
+    email: z.string(),
+    password: z.string(),
+});
 
 export const AuthChangeEmailRequestSchema = z.object({
     newEmail: userEmailSchema,
@@ -39,9 +31,6 @@ export const AuthChangeEmailRequestSchema = z.object({
 
 export type TAuthSignupRequest = z.infer<typeof AuthSignupRequest>;
 export type TAuthLoginRequest = z.infer<typeof AuthLoginRequest>;
-export type TAuthForgotPasswordSchema = z.infer<
-    typeof AuthForgotPasswordSchema
->;
 export type TAuthChangeEmailRequestSchema = z.infer<
     typeof AuthChangeEmailRequestSchema
 >;

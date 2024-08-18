@@ -6,6 +6,7 @@ import { getCurrentTimestamp } from "#utils";
 import _ from "lodash";
 
 // Sessions
+
 export async function createNewUserSession(userId: string) {
     const user = await UserModel.findById(userId);
     if (_.isEmpty(user)) {

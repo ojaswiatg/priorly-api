@@ -47,7 +47,7 @@ export const UserChangePasswordSchema = z
         password: userPasswordSchema,
         confirmPassword: userPasswordSchema,
     })
-    .strict()
+
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords do not match",
         path: ["confirmPassword"],

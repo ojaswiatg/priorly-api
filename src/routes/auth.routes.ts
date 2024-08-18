@@ -1,5 +1,6 @@
 import AuthController from "#controllers/auth.controller";
 import {
+    doesUserExist,
     isEmailAlreadyTaken,
     isUserAlreadyLoggedIn,
     isUserAuthenticated,
@@ -16,7 +17,12 @@ router.post(
     AuthController.signup,
 ); // sends an email caught by /user/signup
 
-router.post("/login", isUserAlreadyLoggedIn, AuthController.login);
+router.post(
+    "/login",
+    doesUserExist,
+    isUserAlreadyLoggedIn,
+    AuthController.login,
+);
 
 router.get("/logout", isUserAuthenticated, AuthController.logout);
 router.get(
@@ -25,7 +31,7 @@ router.get(
     AuthController.logoutAllSessions,
 );
 
-// forgot password
+router.post("/forgot", doesUserExist, AuthController.forgotPassword); // sends an email caught by /user/forgot
 // change email
 
 export default router;

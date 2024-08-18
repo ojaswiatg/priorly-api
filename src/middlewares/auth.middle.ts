@@ -5,6 +5,7 @@ import {
 } from "#constants";
 import SessionModel from "#models/SessionModel";
 import UserModel from "#models/UserModel";
+import { userEmailSchema } from "#schemas";
 import { logURL } from "#utils";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
@@ -120,6 +121,43 @@ export async function isUserAlreadyLoggedIn(
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to verify user credentials",
             error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
+        });
+    }
+}
+
+export async function doesUserExist(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    const email = req.body.email;
+    const isValidEmail = userEmailSchema.safeParse(email).success;
+    if (!email || !isValidEmail) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please enter a valid email",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid email id`,
+        });
+    }
+
+    try {
+        const user = await UserModel.findOne({ email });
+        if (_.isEmpty(user)) {
+            return res.status(EServerResponseCodes.NOT_FOUND).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "No user found with this email id",
+                error: `${API_ERROR_MAP[EServerResponseCodes.NOT_FOUND]}: User does not exist`,
+            });
+        }
+
+        req.body.user = user;
+        next();
+    } catch (error) {
+        logURL(req);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to check user info",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: User lookup failed`,
         });
     }
 }
