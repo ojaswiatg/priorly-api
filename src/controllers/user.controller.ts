@@ -125,7 +125,6 @@ export async function forgotPassword(req: Request, res: Response) {
         email: req.params.email,
         password: req.params.password,
         confirmPassword: req.body.confirmPassword,
-        operation: Number(req.params.operation),
     };
 
     const isValidRequest =
@@ -137,6 +136,15 @@ export async function forgotPassword(req: Request, res: Response) {
             message: "Failed to change the password",
             error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid password`,
             errors: getFormattedZodErrors(isValidRequest.error),
+        });
+    }
+
+    const operation = Number(req.params.operation);
+    if (operation !== EOTPOperation.FORGOT_PASSWORD) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please enter a valid OTP",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid OTP`,
         });
     }
 
@@ -214,6 +222,15 @@ export async function changeEmail(req: Request, res: Response) {
             message: "Failed to change the email id",
             error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid request`,
             errors: getFormattedZodErrors(isValidRequestData.error),
+        });
+    }
+
+    const operation = Number(req.params.operation);
+    if (operation !== EOTPOperation.FORGOT_PASSWORD) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please enter a valid OTP",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid OTP`,
         });
     }
 

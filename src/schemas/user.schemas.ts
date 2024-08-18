@@ -1,4 +1,3 @@
-import { EOTPOperation } from "#constants";
 import { z } from "zod";
 
 export const userNameSchema = z
@@ -41,7 +40,6 @@ export const UserCreateSchema = z.object({
 export const ValidateOTPSchema = z.object({
     otp: z.number(),
     email: userEmailSchema,
-    operation: z.nativeEnum(EOTPOperation),
 });
 
 export const UserChangeForgotPasswordSchema = z
@@ -50,7 +48,6 @@ export const UserChangeForgotPasswordSchema = z
         email: userEmailSchema,
         password: userPasswordSchema,
         confirmPassword: userPasswordSchema,
-        operation: z.nativeEnum(EOTPOperation),
     })
 
     .refine((data) => data.password === data.confirmPassword, {
