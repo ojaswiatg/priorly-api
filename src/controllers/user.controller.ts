@@ -1,5 +1,6 @@
 import {
     API_ERROR_MAP,
+    AUTH_COOKIE,
     EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
@@ -9,15 +10,8 @@ import OTPModel from "#models/OTPModel";
 import UserModel from "#models/UserModel";
 import { UserCreateSchema } from "#schemas";
 import { logURL } from "#utils";
-import type { CookieOptions, Request, Response } from "express";
+import type { Request, Response } from "express";
 import _ from "lodash";
-
-const AUTH_COOKIE: CookieOptions = {
-    secure: true,
-    httpOnly: true,
-    maxAge: 3 * 24 * 60 * 60, // expires in 3 days
-    sameSite: "strict",
-};
 
 export async function signup(req: Request, res: Response) {
     logURL(req);

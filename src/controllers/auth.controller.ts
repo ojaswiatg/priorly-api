@@ -1,5 +1,6 @@
 import {
     API_ERROR_MAP,
+    AUTH_COOKIE,
     EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
@@ -9,6 +10,7 @@ import {
     generateNewOTPForEmail,
     sendMail,
 } from "#helpers";
+import SessionModel from "#models/SessionModel";
 import UserModel from "#models/UserModel";
 import {
     AuthLoginRequest,
@@ -18,16 +20,9 @@ import {
 } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
 import bcrypt from "bcrypt";
-import type { CookieOptions, Request, Response } from "express";
+import type { Request, Response } from "express";
 import _ from "lodash";
 import type { ZodError } from "zod";
-
-const AUTH_COOKIE: CookieOptions = {
-    secure: true,
-    httpOnly: true,
-    maxAge: 3 * 24 * 60 * 60, // expires in 3 days
-    sameSite: "strict",
-};
 
 async function signup(req: Request, res: Response) {
     // sends a mail caught by UserController.create
@@ -179,7 +174,54 @@ async function login(req: Request, res: Response) {
     }
 }
 
+async function logout(req: Request, res: Response) {
+    logURL(req);
+
+    const sid = req.params.sid; // sid is guranteed from the isUserAuthenticated middleware
+
+    try {
+        await SessionModel.findByIdAndDelete(sid);
+        return res
+            .cookie("sid", "", AUTH_COOKIE)
+            .status(EServerResponseCodes.OK)
+            .json({
+                rescode: EServerResponseRescodes.SUCCESS,
+                message: "User logged out successfully",
+            });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to logout",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to logout`,
+        });
+    }
+}
+
+async function logoutAllSessions(req: Request, res: Response) {
+    logURL(req);
+
+    const userId = req.params.userId; // userId is guranteed from the isUserAuthenticated middleware
+
+    try {
+        await SessionModel.deleteMany({ user: userId });
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "User logged out successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to logout from all sessions",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to logout from all sessions`,
+        });
+    }
+}
+
 export default {
     signup,
     login,
+    logout,
+    logoutAllSessions,
 };

@@ -17,9 +17,17 @@ export async function isUserAuthenticated(
 ) {
     const sid = req.cookies.sid;
 
+    if (!sid || !isValidObjectId(sid)) {
+        return res.status(EServerResponseCodes.FORBIDDEN).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please log in to continue",
+            error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
+        });
+    }
+
     try {
         const session = await SessionModel.findById(sid);
-        if (!sid || _.isEmpty(session)) {
+        if (_.isEmpty(session)) {
             return res.status(EServerResponseCodes.FORBIDDEN).json({
                 rescode: EServerResponseRescodes.ERROR,
                 message: "Please log in to continue",
@@ -27,8 +35,18 @@ export async function isUserAuthenticated(
             });
         }
 
+        const user = await UserModel.findById(session.userId);
+        if (_.isEmpty(user) || session.userId !== user.id) {
+            return res.status(EServerResponseCodes.NOT_FOUND).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "User not found in this session",
+                error: `${API_ERROR_MAP[EServerResponseCodes.NOT_FOUND]}: User does not exist`,
+            });
+        }
+
         req.params.userId = session.userId;
         req.params.email = session.email;
+        req.params.sid = req.cookies.sid;
 
         next();
     } catch (error) {
