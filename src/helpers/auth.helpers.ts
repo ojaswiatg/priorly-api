@@ -90,6 +90,7 @@ async function canUserSendOTP(email: string) {
 interface IGenerateNewOTPForEmailParams {
     email: string;
     name?: string;
+    newEmail?: string;
     operation: EOTPOperation;
     password?: string;
 }

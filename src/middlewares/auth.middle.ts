@@ -4,12 +4,17 @@ import {
     EServerResponseRescodes,
 } from "#constants";
 import SessionModel from "#models/SessionModel";
-import UserModel from "#models/UserModel";
-import { userEmailSchema } from "#schemas";
-import { logURL } from "#utils";
+import UserModel, { UserSchema } from "#models/UserModel";
+import {
+    IsCorrectPasswordSchema,
+    userEmailSchema,
+    type TIsCorrectPasswordSchema,
+} from "#schemas";
+import { getFormattedZodErrors, logURL } from "#utils";
+import bcrypt from "bcrypt";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
-import { isValidObjectId } from "mongoose";
+import { isValidObjectId, type InferSchemaType } from "mongoose";
 
 export async function isUserAuthenticated(
     req: Request,
@@ -81,6 +86,8 @@ export async function isEmailAlreadyTaken(
         const user = await UserModel.findOne({ email: email });
 
         if (_.isEmpty(user)) {
+            req.params.newEmail = req.body.newEmail;
+            req.params.email = req.body.email;
             next();
         } else {
             return res.status(EServerResponseCodes.CONFLICT).json({
@@ -95,7 +102,7 @@ export async function isEmailAlreadyTaken(
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Faild to verify details, please try again later",
+            message: "Failed to verify details, please try again later",
             error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Failed to verify credentials`,
         });
     }
@@ -167,6 +174,56 @@ export async function doesUserExist(
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to check user info",
             error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: User lookup failed`,
+        });
+    }
+}
+
+export async function doesPasswordMatch(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    const userDetails = req.body as TIsCorrectPasswordSchema;
+    const isValidUserDetails = IsCorrectPasswordSchema.safeParse(userDetails);
+
+    if (!isValidUserDetails.success) {
+        logURL(req);
+
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to verify credentials, please try again later",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Failed to verify credentials`,
+            errors: getFormattedZodErrors(isValidUserDetails.error),
+        });
+    }
+
+    try {
+        const foundUser = req.body.user as InferSchemaType<
+            typeof UserSchema
+        > & { id: string }; // guaranteed by doesUserExist middleware
+
+        const passwordMatched = await bcrypt.compare(
+            userDetails.password,
+            foundUser?.password ?? "",
+        );
+
+        if (!passwordMatched) {
+            return res.status(EServerResponseCodes.UNAUTHORIZED).json({
+                rescode: EServerResponseRescodes.ERROR,
+                message: "Wrong password",
+                error: `${API_ERROR_MAP[EServerResponseCodes.UNAUTHORIZED]}: Wrong password`,
+            });
+        }
+
+        req.params.userId = foundUser.id;
+        req.params.email = foundUser.email;
+
+        next();
+    } catch (error) {
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to verify credentials",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Password lookup failed`,
         });
     }
 }

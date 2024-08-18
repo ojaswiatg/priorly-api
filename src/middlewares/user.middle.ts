@@ -37,6 +37,7 @@ export async function validateOTP(
         req.params = {
             otp: otpDetails.otp.toString(),
             email: userDetails.email,
+            newEmail: userDetails.newEmail ?? "",
             name: userDetails.name ?? "",
             password: userDetails.password ?? "",
             operation: userDetails.operation.toString(),

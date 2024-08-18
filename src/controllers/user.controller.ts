@@ -15,7 +15,6 @@ import {
     UserCreateSchema,
 } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
-import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import _ from "lodash";
 
@@ -207,10 +206,10 @@ export async function changeEmail(req: Request, res: Response) {
     logURL(req);
 
     const userDetails = {
-        // guaranteed by validateOTP middleware
+        // params guaranteed by validateOTP middleware
         otp: Number(req.params.otp),
         email: req.params.email,
-        newEmail: req.body.newEmail,
+        newEmail: req.params.newEmail,
         password: req.body.password,
     };
 
@@ -230,20 +229,6 @@ export async function changeEmail(req: Request, res: Response) {
             rescode: EServerResponseRescodes.ERROR,
             message: "Please enter a valid OTP",
             error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid OTP`,
-        });
-    }
-
-    const foundUser = req.body.user; // guranteed by doesUserExist middleware
-    const passwordMatched = await bcrypt.compare(
-        userDetails.password,
-        foundUser.password,
-    );
-
-    if (!passwordMatched) {
-        return res.status(EServerResponseCodes.UNAUTHORIZED).json({
-            rescode: EServerResponseRescodes.ERROR,
-            message: "Wrong password",
-            error: `${API_ERROR_MAP[EServerResponseCodes.UNAUTHORIZED]}: Wrong password`,
         });
     }
 

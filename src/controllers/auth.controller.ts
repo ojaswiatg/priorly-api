@@ -11,15 +11,15 @@ import {
     sendMail,
 } from "#helpers";
 import SessionModel from "#models/SessionModel";
-import { UserSchema } from "#models/UserModel";
+import UserModel, { UserSchema } from "#models/UserModel";
 import {
+    AuthChangeEmailRequestSchema,
     AuthLoginRequest,
     AuthSignupRequest,
     type TAuthLoginRequest,
     type TAuthSignupRequest,
 } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
-import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import _ from "lodash";
 import type { InferSchemaType } from "mongoose";
@@ -128,19 +128,6 @@ async function login(req: Request, res: Response) {
         const foundUser = req.body.user as InferSchemaType<
             typeof UserSchema
         > & { id: string }; // guaranteed from doesUserExist middleware
-
-        const passwordMatched = await bcrypt.compare(
-            userDetails.password,
-            foundUser.password,
-        );
-
-        if (!passwordMatched) {
-            return res.status(EServerResponseCodes.UNAUTHORIZED).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: "Wrong password",
-                error: `${API_ERROR_MAP[EServerResponseCodes.UNAUTHORIZED]}: Wrong password`,
-            });
-        }
 
         const sid = await createNewUserSession(foundUser.id);
         if (!sid) {
@@ -254,10 +241,26 @@ async function changeEmail(req: Request, res: Response) {
 
     // all error handling are being done by the individual methods
     const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from doesUserExist middleware
-    const newEmail = req.body.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
+    const newEmail = req.params.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
+
+    const requestData = {
+        email: req.body.email,
+        newEmail: req.body.newEmail,
+    };
+    const isValidRequestData =
+        AuthChangeEmailRequestSchema.safeParse(requestData);
+    if (!isValidRequestData.success) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change email",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid request`,
+            errors: getFormattedZodErrors(isValidRequestData.error),
+        });
+    }
 
     const otp = await generateNewOTPForEmail({
         email: foundUser.email,
+        newEmail: requestData.newEmail,
         operation: EOTPOperation.CHANGE_EMAIL,
     });
 
@@ -286,6 +289,42 @@ async function changeEmail(req: Request, res: Response) {
     });
 }
 
+export async function deleteAccount(req: Request, res: Response) {
+    const userId = req.params.userId as string; // guaranteed by doesPasswordMatch middleware
+    const email = req.params.email as string; // guaranteed by doesPasswordMatch middleware
+
+    try {
+        await UserModel.findByIdAndDelete(userId);
+
+        // send email to old and new synchronously
+        const clientURI = String(process.env.CLIENT_URI);
+        sendMail({
+            emailTo: email,
+            subject: "Priorly - Account deleted",
+            templateFileName: "account-deleted",
+            context: {
+                signupLink: `${clientURI}/auth/signup`,
+            },
+            methodName: "user/deleteAccount",
+        });
+
+        return res
+            .cookie("sid", "", AUTH_COOKIE)
+            .status(EServerResponseCodes.OK)
+            .json({
+                rescode: EServerResponseRescodes.SUCCESS,
+                message: "Account deleted successfully",
+            });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to delete the account",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: User lookup failed`,
+        });
+    }
+}
+
 export default {
     signup,
     login,
@@ -293,4 +332,5 @@ export default {
     logoutAllSessions,
     forgotPassword,
     changeEmail,
+    deleteAccount,
 };

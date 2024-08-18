@@ -1,5 +1,6 @@
 import AuthController from "#controllers/auth.controller";
 import {
+    doesPasswordMatch,
     doesUserExist,
     isEmailAlreadyTaken,
     isUserAlreadyLoggedIn,
@@ -19,6 +20,7 @@ router.post(
 router.post(
     "/login",
     doesUserExist,
+    doesPasswordMatch,
     isUserAlreadyLoggedIn,
     AuthController.login,
 );
@@ -38,5 +40,13 @@ router.post(
     isEmailAlreadyTaken,
     AuthController.changeEmail,
 ); // sends an email caught by /user/change/email
+
+router.post(
+    "/delete",
+    isUserAuthenticated,
+    doesUserExist,
+    doesPasswordMatch,
+    AuthController.deleteAccount,
+);
 
 export default router;

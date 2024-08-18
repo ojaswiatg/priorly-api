@@ -41,3 +41,11 @@ export const AuthChangeEmailResponseSchmea = UserDetailsResponseSchema;
 export type TAuthChangeEmailResponseSchmea = z.infer<
     typeof AuthChangeEmailResponseSchmea
 >;
+
+// Middleware validations
+export const IsCorrectPasswordSchema = z.object({
+    email: userEmailSchema,
+    password: z.string(),
+});
+
+export type TIsCorrectPasswordSchema = z.infer<typeof IsCorrectPasswordSchema>;

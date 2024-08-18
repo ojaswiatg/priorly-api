@@ -5,6 +5,7 @@ import mongoose, { Document, Schema } from "mongoose";
 interface IOTP extends Document {
     email: string;
     name?: string;
+    newEmail?: string;
     otp: number;
     password?: string;
     createdOn: number;
@@ -20,6 +21,7 @@ export const OTPSchema = new Schema(
             lowercase: [true], // converts the value to lower case before storing
         },
         name: { type: String, required: false, default: "" },
+        newEmail: { type: String, required: false, default: "" },
         otp: {
             type: Number,
             unique: [true],

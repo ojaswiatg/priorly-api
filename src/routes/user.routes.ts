@@ -1,5 +1,6 @@
 import UserController from "#controllers/user.controller";
 import {
+    doesPasswordMatch,
     doesUserExist,
     isEmailAlreadyTaken,
     isUserAuthenticated,
@@ -9,7 +10,6 @@ import { Router } from "express";
 
 // change name
 // change password
-// delete user
 
 const router = Router();
 
@@ -20,6 +20,7 @@ router.post(
     isUserAuthenticated,
     doesUserExist,
     isEmailAlreadyTaken,
+    doesPasswordMatch,
     validateOTP,
     UserController.changeEmail,
 ); // catches an email sent by /auth/change
