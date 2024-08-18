@@ -1,7 +1,6 @@
 import UserController from "#controllers/user.controller";
 import {
     doesPasswordMatch,
-    doesUserExist,
     isEmailAlreadyTaken,
     isUserAuthenticated,
 } from "#middlewares/auth.middle";
@@ -9,7 +8,6 @@ import { validateOTP } from "#middlewares/user.middle";
 import { Router } from "express";
 
 // change name
-// change password
 
 const router = Router();
 
@@ -18,11 +16,19 @@ router.post("/forgot", validateOTP, UserController.forgotPassword); // catches a
 router.post(
     "/change/email",
     isUserAuthenticated,
-    doesUserExist,
     isEmailAlreadyTaken,
     doesPasswordMatch,
     validateOTP,
     UserController.changeEmail,
 ); // catches an email sent by /auth/change
+
+router.post(
+    "/change/password",
+    isUserAuthenticated,
+    doesPasswordMatch,
+    UserController.changePassword,
+);
+
+router.post("/change/name", isUserAuthenticated, UserController.changeName);
 
 export default router;

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 export const userNameSchema = z
-    .string()
+    .string({
+        required_error: "A valid name is mandatory",
+    })
     .min(3, "Name should at lease contain 3 valid characters")
     .max(120, "Name cannot be more that 120 characters long")
     .regex(
@@ -62,11 +64,30 @@ export const UserChangeEmailSchema = z.object({
     password: z.string(),
 });
 
+export const UserChangePasswordSchema = z
+    .object({
+        password: z.string(),
+        newPassword: userPasswordSchema,
+        confirmNewPassword: userPasswordSchema,
+    })
+    .refine((data) => data.newPassword === data.confirmNewPassword, {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    });
+
+export const UserChangeNameSchema = z.object({
+    newName: userNameSchema,
+});
+
 export type TUserCreateSchema = z.infer<typeof UserCreateSchema>;
 export type TUserChangeForgotPasswordSchema = z.infer<
     typeof UserChangeForgotPasswordSchema
 >;
 export type TValidateOTPSchema = z.infer<typeof ValidateOTPSchema>;
+export type TUserChangePasswordSchema = z.infer<
+    typeof UserChangePasswordSchema
+>;
+export type TUserChangeNameSchema = z.infer<typeof UserChangeNameSchema>;
 
 // Responses
 export const UserDetailsResponseSchema = z.object({

@@ -1,7 +1,3 @@
-## Middlewares
-
-1. Middlewares are independent - does not depend on other middlewares
-
 ## API Testing
 
 ## Client

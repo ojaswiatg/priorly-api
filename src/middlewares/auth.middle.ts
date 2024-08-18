@@ -41,8 +41,8 @@ export async function isUserAuthenticated(
             });
         }
 
-        const user = await UserModel.findById(session.userId);
-        if (_.isEmpty(user) || session.userId !== user.id) {
+        const foundUser = await UserModel.findById(session.userId);
+        if (_.isEmpty(foundUser) || session.userId !== foundUser.id) {
             return res.status(EServerResponseCodes.NOT_FOUND).json({
                 rescode: EServerResponseRescodes.ERROR,
                 message: "User not found in this session",
@@ -51,7 +51,8 @@ export async function isUserAuthenticated(
         }
 
         req.params.userId = session.userId;
-        req.params.email = session.email;
+        req.params.email = foundUser.email;
+        req.body.user = foundUser;
 
         next();
     } catch (error) {
@@ -184,11 +185,13 @@ export async function doesPasswordMatch(
     next: NextFunction,
 ) {
     const userDetails = req.body as TIsCorrectPasswordSchema;
+
+    // params email guranteed by isUserAuthenticated middleware
+    userDetails.email = req.params.email || req.body.email;
+
     const isValidUserDetails = IsCorrectPasswordSchema.safeParse(userDetails);
 
     if (!isValidUserDetails.success) {
-        logURL(req);
-
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Failed to verify credentials, please try again later",
@@ -200,7 +203,7 @@ export async function doesPasswordMatch(
     try {
         const foundUser = req.body.user as InferSchemaType<
             typeof UserSchema
-        > & { id: string }; // guaranteed by doesUserExist middleware
+        > & { id: string }; // guaranteed by doesUserExist or isUserAuthenticated middleware
 
         const passwordMatched = await bcrypt.compare(
             userDetails.password,

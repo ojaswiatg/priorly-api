@@ -12,7 +12,11 @@ import UserModel from "#models/UserModel";
 import {
     UserChangeEmailSchema,
     UserChangeForgotPasswordSchema,
+    UserChangeNameSchema,
+    UserChangePasswordSchema,
     UserCreateSchema,
+    type TUserChangeNameSchema,
+    type TUserChangePasswordSchema,
 } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
 import type { Request, Response } from "express";
@@ -240,7 +244,7 @@ export async function changeEmail(req: Request, res: Response) {
             { new: true },
         );
 
-        // internal server error because the user should have been guranteed by doesUserExist
+        // internal server error because the user should have been guranteed by isUserAuthenticated middleware
         if (_.isEmpty(updatedUser)) {
             return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
                 rescode: EServerResponseRescodes.ERROR,
@@ -293,8 +297,86 @@ export async function changeEmail(req: Request, res: Response) {
     }
 }
 
+export async function changePassword(req: Request, res: Response) {
+    // password comparision guaranteed by doesPasswordMatch middleware
+
+    const passowrdDetails = req.body as TUserChangePasswordSchema;
+    const isValidRequest = UserChangePasswordSchema.safeParse(passowrdDetails);
+    if (!isValidRequest.success) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change user password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid request data`,
+            errors: getFormattedZodErrors(isValidRequest.error),
+        });
+    }
+
+    const userId = req.params.userId; // guaranteed by doesPasswordMatch middleware
+
+    try {
+        // user guaranteed by isUserAuthenticated and does password match middleware
+        const updates = { password: passowrdDetails.newPassword };
+        await UserModel.findByIdAndUpdate(userId, { $set: updates });
+
+        // send mail synchronously
+        const email = req.params.email; // guaranteed by doesPasswordMatch middleware
+        sendMail({
+            emailTo: email,
+            subject: "Your Priorly password was changed",
+            templateFileName: "password-changed",
+            context: {},
+            methodName: "user/forgot",
+        });
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Password updated successfully",
+        });
+    } catch (error) {
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change user password",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Password update failed`,
+        });
+    }
+}
+
+export async function changeName(req: Request, res: Response) {
+    const requestData = req.body as TUserChangeNameSchema;
+
+    const isValidRequestData = UserChangeNameSchema.safeParse(requestData);
+    if (!isValidRequestData.success) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please enter a valid name",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid name`,
+            errors: getFormattedZodErrors(isValidRequestData.error),
+        });
+    }
+
+    const userId = req.params.userId; // guaranteed by isUserAuthenticated middleware
+    try {
+        // user guaranteed by isUserAuthenticated and does password match middleware
+        const updates = { name: requestData.newName };
+        await UserModel.findByIdAndUpdate(userId, { $set: updates });
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Name changed successfully",
+        });
+    } catch (error) {
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to change user name",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Name update failed`,
+        });
+    }
+}
+
 export default {
     signup,
     forgotPassword,
     changeEmail,
+    changePassword,
+    changeName,
 };

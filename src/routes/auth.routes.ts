@@ -36,7 +36,6 @@ router.post("/forgot", doesUserExist, AuthController.forgotPassword); // sends a
 router.post(
     "/change",
     isUserAuthenticated,
-    doesUserExist,
     isEmailAlreadyTaken,
     AuthController.changeEmail,
 ); // sends an email caught by /user/change/email
@@ -44,7 +43,6 @@ router.post(
 router.post(
     "/delete",
     isUserAuthenticated,
-    doesUserExist,
     doesPasswordMatch,
     AuthController.deleteAccount,
 );

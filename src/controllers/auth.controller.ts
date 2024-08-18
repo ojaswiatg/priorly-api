@@ -240,7 +240,7 @@ async function changeEmail(req: Request, res: Response) {
     logURL(req);
 
     // all error handling are being done by the individual methods
-    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from doesUserExist middleware
+    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from isUserAuthenticated middleware
     const newEmail = req.params.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
 
     const requestData = {
@@ -290,8 +290,8 @@ async function changeEmail(req: Request, res: Response) {
 }
 
 export async function deleteAccount(req: Request, res: Response) {
-    const userId = req.params.userId as string; // guaranteed by doesPasswordMatch middleware
-    const email = req.params.email as string; // guaranteed by doesPasswordMatch middleware
+    const userId = req.params.userId as string; // guaranteed by isUserAuthenticated middleware
+    const email = req.params.email as string; // guaranteed by isUserAuthenticated middleware
 
     try {
         await UserModel.findByIdAndDelete(userId);
