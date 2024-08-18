@@ -113,10 +113,12 @@ export async function signup(req: Request, res: Response) {
         });
     } finally {
         // delete the otp synchronously
-        OTPModel.deleteOne({ otp }).catch((error) => {
+        try {
+            await OTPModel.deleteOne({ otp });
+        } catch (error) {
             console.error("Failed to delete last OTP");
             console.error(error);
-        });
+        }
     }
 }
 
@@ -207,10 +209,12 @@ export async function forgotPassword(req: Request, res: Response) {
     } finally {
         // delete the otp synchronously
         if (passwordDetails.otp) {
-            OTPModel.deleteOne({ otp: passwordDetails.otp }).catch((error) => {
+            try {
+                await OTPModel.deleteOne({ otp: passwordDetails.otp });
+            } catch (error) {
                 console.error("Failed to delete last OTP");
                 console.error(error);
-            });
+            }
         }
     }
 }
