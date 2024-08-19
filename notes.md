@@ -1,4 +1,5 @@
-Check wehre we are setting sid to empty - delete the session before that or synchronously
+1. Check wehre we are setting sid to empty - delete the session before that or synchronously
+2. Request .params is not working, find another way to send variables to the handler.
 
 ## Client
 
