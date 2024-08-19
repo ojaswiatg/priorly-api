@@ -1,4 +1,4 @@
-## API Testing
+Check wehre we are setting sid to empty - delete the session before that or synchronously
 
 ## Client
 

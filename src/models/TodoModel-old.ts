@@ -40,10 +40,6 @@ TodoSchema.set("toJSON", {
     virtuals: true,
 });
 
-TodoSchema.set("toObject", {
-    virtuals: true,
-});
-
 const TodoModel = mongoose.model("Todos", TodoSchema);
 
 export default TodoModel;

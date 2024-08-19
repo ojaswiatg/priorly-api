@@ -72,6 +72,9 @@ SessionSchema.pre("save", async function (next) {
 SessionSchema.set("toJSON", {
     virtuals: true,
 });
+SessionSchema.set("toObject", {
+    virtuals: true,
+});
 
 const SessionModel = mongoose.model<ISession>("Sessions", SessionSchema);
 

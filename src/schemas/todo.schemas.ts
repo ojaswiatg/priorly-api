@@ -64,7 +64,6 @@ export const TodoDetailsResponseSchema = TodoUpdateChangesSchema.merge(
         deletedOn: z.number().nullish(),
         updatedOn: z.number().nullish(),
         createdOn: z.number().nullish(),
-        user: z.string(),
     }),
 );
 
