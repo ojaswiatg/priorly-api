@@ -18,14 +18,15 @@
 ## Readme
 
 1. About
-2. Landing page link
-3. Features
-4. Deployed app link
-5. Documentataion link
-6. How to start the project
+2. Disclaimer - This app has been tested at personal capacity, with a busy schedule. If you encounter any bugs or find some feature not working as expected, raise an issue.
+3. Landing page link
+4. Features
+5. Deployed app link
+6. Documentataion link
+7. How to start the project
     1. Env variables required
     2. Exlcuding dockerfile from git
     3. Starting project
-7. Building and deployment instructions
+8. Building and deployment instructions
     1. Building instructions
     2. Deployment instructions
