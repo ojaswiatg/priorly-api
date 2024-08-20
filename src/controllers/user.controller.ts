@@ -64,7 +64,7 @@ export async function signup(req: Request, res: Response) {
         // send mail synchronously
         const clientURI = String(process.env.CLIENT_URI);
         sendMail({
-            emailTo: newUser.email,
+            emailTo: newUser.email as string,
             subject: "Welcome to Priorly!",
             templateFileName: "welcome",
             context: {
@@ -169,7 +169,7 @@ export async function forgotPassword(req: Request, res: Response) {
 
         // send mail synchronously
         sendMail({
-            emailTo: passwordDetails.email,
+            emailTo: passwordDetails.email as string,
             subject: "Your Priorly password was changed",
             templateFileName: "password-changed",
             context: {},
@@ -255,7 +255,7 @@ export async function changeEmail(req: Request, res: Response) {
 
         // send email to old and new synchronously
         sendMail({
-            emailTo: userDetails.email,
+            emailTo: userDetails.email as string,
             subject: "Your Priorly email was changed",
             templateFileName: "email-changed-old",
             context: {
@@ -321,7 +321,7 @@ export async function changePassword(req: Request, res: Response) {
         // send mail synchronously
         const email = req.query.email; // guaranteed by doesPasswordMatch middleware
         sendMail({
-            emailTo: email,
+            emailTo: email as string,
             subject: "Your Priorly password was changed",
             templateFileName: "password-changed",
             context: {},
