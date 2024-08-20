@@ -6,8 +6,11 @@ import {
 import TodoModel from "#models/TodoModel";
 import {
     TodoDetailsResponseSchema,
+    TodoUpdateChangesSchema,
     type TTodoDetailsResponseSchema,
+    type TTodoUpdateChangesSchema,
 } from "#schemas";
+import { getCurrentTimestamp, getFormattedZodErrors } from "#utils";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
 import { isValidObjectId } from "mongoose";
@@ -42,6 +45,7 @@ export async function doesTodoExist(
         const todo = TodoDetailsResponseSchema.merge(
             z.object({ userId: z.string() }),
         ).parse(foundTodo);
+
         req.body.todo = todo;
         req.query.todoId = todoId;
 
@@ -81,27 +85,29 @@ export async function parseTodoUpdates(
     res: Response,
     next: NextFunction,
 ) {
-    const todoID = req.query.id;
-    const changes = req.body?.changes as TEditTodoChangesSchema; // taking id in body, will require some extra work of processing the request.
+    const changes = req.body?.changes; // taking id in body, will require some extra work of processing the request.
+
+    const failedMessage = "Failed to update the todo item";
 
     if (_.isEmpty(changes)) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to update todos",
-            error: "Bad request: No changes sent to update",
+            message: failedMessage,
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: No change to udpate`,
         });
     }
 
-    try {
-        EditTodoChangesSchema.parse(changes);
-    } catch (error) {
+    const isValidRequestData = TodoUpdateChangesSchema.safeParse(changes);
+    if (!isValidRequestData.success) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to update the todo",
-            error: "Bad request: Changes contain invalid fields and/or values",
+            message: failedMessage,
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid request`,
+            errors: getFormattedZodErrors(isValidRequestData.error),
         });
     }
 
+    // if todo has done/deleted changes, then don't allow any other changes
     if (
         (changes.isDone ||
             changes.isDone === false ||
@@ -111,54 +117,55 @@ export async function parseTodoUpdates(
     ) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to update todos",
-            error: "Bad request: Can not apply more changes when toggling deleted or done",
+            message: failedMessage,
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Cannot apply more changes when toggling deleted or done`,
         });
     }
 
-    const updates = _.cloneDeep(changes) as TEditTodoChangesSchema & {
+    // clone the updates
+    const updates = _.cloneDeep(changes) as TTodoUpdateChangesSchema & {
         completedOn: number | null;
         deletedOn: number | null;
     };
 
     if (changes.isDone) {
-        updates.reminder = null;
-        updates.deadline = null;
-        updates.completedOn = getCurrentTimeStamp();
-    } else {
+        // if the todo has been marked as done then we set it to the current timestamp,
+        updates.completedOn = getCurrentTimestamp();
+    } else if (changes.isDone === false) {
         updates.completedOn = null;
     }
 
     if (changes.isDeleted) {
-        updates.deletedOn = getCurrentTimeStamp();
-    } else {
+        updates.deletedOn = getCurrentTimestamp();
+    } else if (changes.isDeleted === false) {
         updates.deletedOn = null;
     }
 
     try {
-        // if todo is deleted then forbid other changes other than recovery
-        const todo = await TodoModel.findById(todoID);
+        const todo = req.body.todo; // guaranteed by doesTodoExistMiddleware
 
+        // if todo is deleted then forbid other changes other than recovery
         if (
-            todo?.isDeleted &&
-            changes.isDeleted &&
-            _.values(changes).length > 1
+            todo.isDeleted &&
+            (changes.isDeleted || _.values(changes).length > 1)
         ) {
             return res.status(EServerResponseCodes.BAD_REQUEST).json({
                 rescode: EServerResponseRescodes.ERROR,
-                message: "Unable to update todos",
-                error: "Bad request: Can not apply any change on deleted todo",
+                message: failedMessage,
+                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Cannot apply any changes to a deleted item`,
             });
         }
     } catch (error) {
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Unable to update the todo details",
-            error: "Internal server error",
+            message: failedMessage,
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Todo lookup failed`,
         });
     }
 
     req.body.updates = updates;
+    req.query.failedMessage = failedMessage;
+
     next();
 }

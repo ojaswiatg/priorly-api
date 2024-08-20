@@ -1,5 +1,9 @@
 import TodoController from "#controllers/todo.controllers";
-import { doesTodoExist, isUserOwnerOfTodo } from "#middlewares/todo.middle";
+import {
+    doesTodoExist,
+    isUserOwnerOfTodo,
+    parseTodoUpdates,
+} from "#middlewares/todo.middle";
 import { Router } from "express";
 
 const router = Router();
@@ -18,7 +22,14 @@ router.post(
     TodoController.deleteTodo,
 );
 router.post("/count", TodoController.countTodos);
-
 router.post("/all", TodoController.getAllTodos);
+
+router.post(
+    "/edit",
+    doesTodoExist,
+    isUserOwnerOfTodo,
+    parseTodoUpdates,
+    TodoController.updateTodo,
+);
 
 export default router;

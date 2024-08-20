@@ -24,9 +24,6 @@ export const TodoUpdateChangesSchema = z.object({
     isUrgent: z.boolean().nullish(),
     isDone: z.boolean().nullish(),
     isDeleted: z.boolean().nullish(),
-
-    deadline: z.number().nullish(),
-    reminder: z.number().nullish(),
 });
 
 export const TodoUpdateRequestSchema = z.object({

@@ -93,6 +93,7 @@ async function getAllTodos(req: Request, res: Response) {
     }
 
     const userId = req.query.userId; // guaranteed by isUserAuthenticated middleware
+
     filters.user = userId;
 
     try {
@@ -166,6 +167,39 @@ async function countTodos(req: Request, res: Response) {
     }
 }
 
+export async function updateTodo(req: Request, res: Response) {
+    logURL(req);
+
+    const todoId = req.query.todoId; // sent on request
+    const updates = req.body.updates; // guaranteed by parseTodoUpdates middleware
+    const failedMessage = req.query.failedMessage; // guaranteed by parseTodoUpdates middleware
+
+    try {
+        const updatedTodo = await TodoModel.findByIdAndUpdate(
+            todoId,
+            { $set: updates },
+            { new: true }, // returns the updated todo otherwise old todo
+        );
+
+        const todo = TodoDetailsResponseSchema.parse(updatedTodo);
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Todo updated successfully",
+            data: {
+                todo,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: failedMessage,
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Todo update failed`,
+        });
+    }
+}
+
 async function deleteTodo(req: Request, res: Response) {
     logURL(req);
     const todoId = req.query.id as string;
@@ -195,5 +229,6 @@ export default {
     details,
     getAllTodos,
     countTodos,
+    updateTodo,
     deleteTodo,
 };
