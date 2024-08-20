@@ -34,13 +34,13 @@ export async function validateOTP(
             });
         }
 
-        req.params = {
-            otp: otpDetails.otp.toString(),
+        req.body.otpData = {
+            otp: otpDetails.otp,
             email: userDetails.email,
             newEmail: userDetails.newEmail ?? "",
             name: userDetails.name ?? "",
             password: userDetails.password ?? "",
-            operation: userDetails.operation.toString(),
+            operation: userDetails.operation,
         };
 
         next();

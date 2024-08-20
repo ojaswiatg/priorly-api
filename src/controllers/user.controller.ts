@@ -27,10 +27,11 @@ export async function signup(req: Request, res: Response) {
 
     const requestData = {
         // guaranteed by validateOTP middleware
-        otp: Number(req.query.otp),
-        email: req.query.email,
-        name: req.query.name,
-        password: req.query.password,
+        otp: req.body.otpData.otp,
+        email: req.body.otpData.email,
+        name: req.body.otpData.name,
+        password: req.body.otpData.password,
+        operation: req.body.otpData.operation,
     };
 
     const isValidRequestData = UserCreateSchema.safeParse(requestData);
@@ -43,8 +44,7 @@ export async function signup(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.query.operation);
-    if (operation !== EOTPOperation.SIGNUP) {
+    if (requestData.operation !== EOTPOperation.SIGNUP) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Please enter a valid OTP",
@@ -124,10 +124,11 @@ export async function forgotPassword(req: Request, res: Response) {
 
     const passwordDetails = {
         // guranteed by validateOTP middleware
-        otp: Number(req.query.otp),
-        email: req.query.email,
+        otp: req.body.otpData.otp,
+        email: req.body.otpData.email,
         password: req.body.password,
         confirmPassword: req.body.confirmPassword,
+        operation: req.body.otpData.operation,
     };
 
     const isValidRequest =
@@ -142,8 +143,7 @@ export async function forgotPassword(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.query.operation);
-    if (operation !== EOTPOperation.FORGOT_PASSWORD) {
+    if (passwordDetails.operation !== EOTPOperation.FORGOT_PASSWORD) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Please enter a valid OTP",
@@ -211,10 +211,11 @@ export async function changeEmail(req: Request, res: Response) {
 
     const userDetails = {
         // params guaranteed by validateOTP middleware
-        otp: Number(req.query.otp),
-        email: req.query.email,
-        newEmail: req.query.newEmail,
-        password: req.body.password,
+        otp: req.body.otpData.otp,
+        email: req.body.otpData.email,
+        newEmail: req.body.otpData.newEmail,
+        password: req.body.otpData.password,
+        operation: req.body.otpData.operation,
     };
 
     const isValidRequestData = UserChangeEmailSchema.safeParse(userDetails);
@@ -227,8 +228,7 @@ export async function changeEmail(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.query.operation);
-    if (operation !== EOTPOperation.CHANGE_EMAIL) {
+    if (userDetails.operation !== EOTPOperation.CHANGE_EMAIL) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Please enter a valid OTP",

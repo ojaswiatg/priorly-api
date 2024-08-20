@@ -290,6 +290,7 @@ async function changeEmail(req: Request, res: Response) {
 }
 
 export async function deleteAccount(req: Request, res: Response) {
+    logURL(req);
     const userId = req.query.userId as string; // guaranteed by isUserAuthenticated middleware
     const email = req.query.email as string; // guaranteed by isUserAuthenticated middleware
 
