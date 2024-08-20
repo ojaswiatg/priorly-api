@@ -52,6 +52,7 @@ export async function isUserAuthenticated(
 
         req.query.userId = session.userId;
         req.query.email = foundUser.email;
+        req.query.sid = sid;
         req.body.user = foundUser;
 
         next();
