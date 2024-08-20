@@ -308,6 +308,8 @@ export async function deleteAccount(req: Request, res: Response) {
             methodName: "user/deleteAccount",
         });
 
+        await SessionModel.deleteMany({ user: userId });
+
         return res
             .cookie("sid", "", AUTH_COOKIE)
             .status(EServerResponseCodes.OK)
