@@ -11,6 +11,7 @@ import {
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
 import { isValidObjectId } from "mongoose";
+import { z } from "zod";
 
 export async function doesTodoExist(
     req: Request,
@@ -38,9 +39,12 @@ export async function doesTodoExist(
             });
         }
 
-        const todo = TodoDetailsResponseSchema.parse(foundTodo);
+        const todo = TodoDetailsResponseSchema.merge(
+            z.object({ userId: z.string() }),
+        ).parse(foundTodo);
         req.body.todo = todo;
         req.query.todoId = todoId;
+
         next();
     } catch (error) {
         console.error(error);
@@ -58,10 +62,11 @@ export async function isUserOwnerOfTodo(
     next: NextFunction,
 ) {
     const userId = req.query.userId as string; // guaranteed by isUserAuthenticated middleware
+    const todo = req.body.todo as TTodoDetailsResponseSchema & {
+        userId: string;
+    }; // guaranteed by doesTodoExist middleware
 
-    const todo = req.body.todo as TTodoDetailsResponseSchema; // guaranteed by doesTodoExist middleware
-
-    if (todo.user !== userId) {
+    if (todo.userId !== userId) {
         return res.status(EServerResponseCodes.UNAUTHORIZED).json({
             rescode: EServerResponseRescodes.ERROR,
             error: "You don't have permission to read or update this todo item",

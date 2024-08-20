@@ -5,6 +5,7 @@ import {
 } from "#constants";
 import TodoModel from "#models/TodoModel";
 import {
+    TodoAllRequestSchema,
     TodoCountRequestSchema,
     TodoCreateRequestSchema,
     TodoDetailsResponseSchema,
@@ -12,6 +13,7 @@ import {
 } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
 import type { Request, Response } from "express";
+import _ from "lodash";
 
 async function create(req: Request, res: Response) {
     logURL(req);
@@ -34,8 +36,6 @@ async function create(req: Request, res: Response) {
             title: requestData.title,
             user: userId,
         });
-
-        console.log("created todo: ", createdTodo);
 
         const todo = TodoDetailsResponseSchema.parse(createdTodo); // strips unnecessary keys
 
@@ -69,7 +69,59 @@ async function details(req: Request, res: Response) {
     });
 }
 
-async function getAllTodos() {}
+async function getAllTodos(req: Request, res: Response) {
+    logURL(req);
+
+    const requestData = req.body;
+
+    const isValidRequestData = TodoAllRequestSchema.safeParse(requestData);
+    if (!isValidRequestData.success) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to get todo items",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid data`,
+            errors: getFormattedZodErrors(isValidRequestData.error),
+        });
+    }
+
+    const cursor = req.body.cursor ?? 0;
+    const limit = req.body.limit ?? 10;
+    const filters = req.body.filters ?? {};
+
+    if (filters.isDeleted === null || filters.isDeleted === undefined) {
+        filters.isDeleted = false;
+    }
+
+    const userId = req.query.userId; // guaranteed by isUserAuthenticated middleware
+    filters.user = userId;
+
+    try {
+        const responseTodos = await TodoModel.find(filters, null, {
+            skip: cursor,
+            limit,
+        });
+
+        const todos = _.map(responseTodos, (todo) => {
+            return TodoDetailsResponseSchema.parse(todo);
+        });
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Fetched todo items successfully",
+            data: {
+                todos,
+                cursor: todos.length ? cursor + todos.length : -1,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to get todo items",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Counting documents failed`,
+        });
+    }
+}
 
 async function countTodos(req: Request, res: Response) {
     logURL(req);
@@ -91,6 +143,9 @@ async function countTodos(req: Request, res: Response) {
         filters.isDeleted = false;
     }
 
+    const userId = req.query.userId; // guaranteed by isUserAuthenticated middleware
+    filters.user = userId;
+
     try {
         const count = await TodoModel.countDocuments(filters);
 
@@ -105,7 +160,7 @@ async function countTodos(req: Request, res: Response) {
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Failed to get todos",
+            message: "Failed to get todo items",
             error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Counting documents failed`,
         });
     }

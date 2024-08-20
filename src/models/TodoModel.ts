@@ -28,6 +28,10 @@ TodoSchema.virtual("id").get(function () {
     return this._id.toHexString();
 });
 
+TodoSchema.virtual("userId").get(function () {
+    return this.user.toHexString();
+});
+
 TodoSchema.virtual("createdOn").get(function () {
     return new Date(this.createdAt).getTime() / 1000;
 });
