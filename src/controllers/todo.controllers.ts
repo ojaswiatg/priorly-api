@@ -28,7 +28,7 @@ async function create(req: Request, res: Response) {
     }
 
     try {
-        const userId = req.params.userId; // guaranteed by isUserAuthenticated middleware
+        const userId = req.query.userId; // guaranteed by isUserAuthenticated middleware
 
         const createdTodo = await TodoModel.create({
             title: requestData.title,

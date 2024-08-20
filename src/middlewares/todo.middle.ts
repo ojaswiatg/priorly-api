@@ -40,7 +40,7 @@ export async function doesTodoExist(
 
         const todo = TodoDetailsResponseSchema.parse(foundTodo);
         req.body.todo = todo;
-        req.params.todoId = todoId;
+        req.query.todoId = todoId;
         next();
     } catch (error) {
         console.error(error);
@@ -57,7 +57,7 @@ export async function isUserOwnerOfTodo(
     res: Response,
     next: NextFunction,
 ) {
-    const userId = req.params.userId as string; // guaranteed by isUserAuthenticated middleware
+    const userId = req.query.userId as string; // guaranteed by isUserAuthenticated middleware
 
     const todo = req.body.todo as TTodoDetailsResponseSchema; // guaranteed by doesTodoExist middleware
 

@@ -50,8 +50,8 @@ export async function isUserAuthenticated(
             });
         }
 
-        req.params.userId = session.userId;
-        req.params.email = foundUser.email;
+        req.query.userId = session.userId;
+        req.query.email = foundUser.email;
         req.body.user = foundUser;
 
         next();
@@ -87,8 +87,8 @@ export async function isEmailAlreadyTaken(
         const user = await UserModel.findOne({ email: email });
 
         if (_.isEmpty(user)) {
-            req.params.newEmail = req.body.newEmail;
-            req.params.email = req.body.email;
+            req.query.newEmail = req.body.newEmail;
+            req.query.email = req.body.email;
             next();
         } else {
             return res.status(EServerResponseCodes.CONFLICT).json({
@@ -187,7 +187,7 @@ export async function doesPasswordMatch(
     const userDetails = req.body as TIsCorrectPasswordSchema;
 
     // params email guranteed by isUserAuthenticated middleware
-    userDetails.email = req.params.email || req.body.email;
+    userDetails.email = req.query.email || req.body.email;
 
     const isValidUserDetails = IsCorrectPasswordSchema.safeParse(userDetails);
 
@@ -218,8 +218,8 @@ export async function doesPasswordMatch(
             });
         }
 
-        req.params.userId = foundUser.id;
-        req.params.email = foundUser.email;
+        req.query.userId = foundUser.id;
+        req.query.email = foundUser.email;
 
         next();
     } catch (error) {

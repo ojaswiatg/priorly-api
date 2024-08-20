@@ -27,10 +27,10 @@ export async function signup(req: Request, res: Response) {
 
     const requestData = {
         // guaranteed by validateOTP middleware
-        otp: Number(req.params.otp),
-        email: req.params.email,
-        name: req.params.name,
-        password: req.params.password,
+        otp: Number(req.query.otp),
+        email: req.query.email,
+        name: req.query.name,
+        password: req.query.password,
     };
 
     const isValidRequestData = UserCreateSchema.safeParse(requestData);
@@ -43,7 +43,7 @@ export async function signup(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.params.operation);
+    const operation = Number(req.query.operation);
     if (operation !== EOTPOperation.SIGNUP) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
@@ -124,8 +124,8 @@ export async function forgotPassword(req: Request, res: Response) {
 
     const passwordDetails = {
         // guranteed by validateOTP middleware
-        otp: Number(req.params.otp),
-        email: req.params.email,
+        otp: Number(req.query.otp),
+        email: req.query.email,
         password: req.body.password,
         confirmPassword: req.body.confirmPassword,
     };
@@ -142,7 +142,7 @@ export async function forgotPassword(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.params.operation);
+    const operation = Number(req.query.operation);
     if (operation !== EOTPOperation.FORGOT_PASSWORD) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
@@ -211,9 +211,9 @@ export async function changeEmail(req: Request, res: Response) {
 
     const userDetails = {
         // params guaranteed by validateOTP middleware
-        otp: Number(req.params.otp),
-        email: req.params.email,
-        newEmail: req.params.newEmail,
+        otp: Number(req.query.otp),
+        email: req.query.email,
+        newEmail: req.query.newEmail,
         password: req.body.password,
     };
 
@@ -227,7 +227,7 @@ export async function changeEmail(req: Request, res: Response) {
         });
     }
 
-    const operation = Number(req.params.operation);
+    const operation = Number(req.query.operation);
     if (operation !== EOTPOperation.CHANGE_EMAIL) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
@@ -311,7 +311,7 @@ export async function changePassword(req: Request, res: Response) {
         });
     }
 
-    const userId = req.params.userId; // guaranteed by doesPasswordMatch middleware
+    const userId = req.query.userId; // guaranteed by doesPasswordMatch middleware
 
     try {
         // user guaranteed by isUserAuthenticated and does password match middleware
@@ -319,7 +319,7 @@ export async function changePassword(req: Request, res: Response) {
         await UserModel.findByIdAndUpdate(userId, { $set: updates });
 
         // send mail synchronously
-        const email = req.params.email; // guaranteed by doesPasswordMatch middleware
+        const email = req.query.email; // guaranteed by doesPasswordMatch middleware
         sendMail({
             emailTo: email,
             subject: "Your Priorly password was changed",
@@ -354,7 +354,7 @@ export async function changeName(req: Request, res: Response) {
         });
     }
 
-    const userId = req.params.userId; // guaranteed by isUserAuthenticated middleware
+    const userId = req.query.userId; // guaranteed by isUserAuthenticated middleware
     try {
         // user guaranteed by isUserAuthenticated and does password match middleware
         const updates = { name: requestData.newName };

@@ -158,7 +158,7 @@ async function login(req: Request, res: Response) {
 async function logout(req: Request, res: Response) {
     logURL(req);
 
-    const sid = req.params.sid; // sid is guranteed bythe isUserAuthenticated middleware
+    const sid = req.query.sid; // sid is guranteed bythe isUserAuthenticated middleware
 
     try {
         await SessionModel.findByIdAndDelete(sid);
@@ -182,7 +182,7 @@ async function logout(req: Request, res: Response) {
 async function logoutAllSessions(req: Request, res: Response) {
     logURL(req);
 
-    const userId = req.params.userId; // userId is guranteed bythe isUserAuthenticated middleware
+    const userId = req.query.userId; // userId is guranteed bythe isUserAuthenticated middleware
 
     try {
         await SessionModel.deleteMany({ user: userId });
@@ -241,7 +241,7 @@ async function changeEmail(req: Request, res: Response) {
 
     // all error handling are being done by the individual methods
     const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from isUserAuthenticated middleware
-    const newEmail = req.params.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
+    const newEmail = req.query.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
 
     const requestData = {
         email: req.body.email,
@@ -290,8 +290,8 @@ async function changeEmail(req: Request, res: Response) {
 }
 
 export async function deleteAccount(req: Request, res: Response) {
-    const userId = req.params.userId as string; // guaranteed by isUserAuthenticated middleware
-    const email = req.params.email as string; // guaranteed by isUserAuthenticated middleware
+    const userId = req.query.userId as string; // guaranteed by isUserAuthenticated middleware
+    const email = req.query.email as string; // guaranteed by isUserAuthenticated middleware
 
     try {
         await UserModel.findByIdAndDelete(userId);
