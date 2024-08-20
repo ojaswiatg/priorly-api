@@ -12,7 +12,7 @@ const app = express();
 
 // Use below configuration for allowed origins
 // import {type CorsOptions} from 'cors'
-// const ALLOWED_ORIGINS: string[] = []; // Allowed origins for this API Server
+// const ALLOWED_ORIGINS: string[] = []; // Allowed origins for this API Server - best stored in .env file
 
 // const corsOptions: CorsOptions = {
 //     origin: (origin, callback) => {
