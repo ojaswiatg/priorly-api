@@ -1,0 +1,19 @@
+{
+    "recommendations": [
+        "aaron-bond.better-comments",
+        "adpyke.codesnap",
+        "arturock.gitstash",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode",
+        "rangav.vscode-thunder-client",
+        "ritwickdey.liveserver",
+        "visualstudioexptteam.intellicode-api-usage-examples",
+        "visualstudioexptteam.vscodeintellicode",
+        "visualstudioexptteam.vscodeintellicode-completions",
+        "wmaurer.change-case",
+        "yoavbls.pretty-ts-errors",
+        "yutengjing.vscode-colorize-plus",
+        "yzhang.markdown-all-in-one"
+    ]
+}
