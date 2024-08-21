@@ -36,7 +36,6 @@ export const userPasswordSchema = z
 export const UserCreateSchema = z.object({
     otp: z.number(),
     email: userEmailSchema,
-    name: userNameSchema,
 });
 
 export const ValidateOTPSchema = z.object({
