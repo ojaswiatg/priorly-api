@@ -2,13 +2,13 @@ import { z } from "zod";
 
 export const userNameSchema = z
     .string({
-        required_error: "A valid name is mandatory",
+        required_error: "A valid name is required",
     })
-    .min(3, "Name should at lease contain 3 valid characters")
-    .max(120, "Name cannot be more that 120 characters long")
+    .min(3, "Name must contain at least 3 valid characters")
+    .max(120, "Name cannot be more than 120 characters long")
     .regex(
         /^[A-Za-z]+([.][A-Za-z]+)*([ ][A-Za-z]+([.][A-Za-z]+)*)*$/,
-        "Please enter a valid name. Name can only contain letters, dashes (-) and dots (.).",
+        "Name can only contain letters, dashes (-) and dots (.)",
     );
 
 export const userEmailSchema = z
@@ -19,6 +19,7 @@ export const userEmailSchema = z
 export const userPasswordSchema = z
     .string({ required_error: "Password is required" })
     .min(8, { message: "Password must be at least 8 characters long." })
+    .max(120, "Password must be at most 120 characters long")
     .regex(/[a-z]/, {
         message: "Password must contain at least one lowercase letter.",
     })
