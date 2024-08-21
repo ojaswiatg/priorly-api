@@ -25,7 +25,19 @@ export const TodoUpdateChangesSchema = z.object({
     isDone: z.boolean().nullish(),
     isDeleted: z.boolean().nullish(),
 });
+// Creating validation schema for updates
+const isDoneSchema = z
+    .object({ isDone: z.boolean() })
+    .strict({ message: "Cannot apply any changes when toggling isDone" });
+const isDeletedSchema = z
+    .object({ isDeleted: z.boolean() })
+    .strict({ message: "Cannot apply any changes when toggling isDeleted" });
 
+export const TodoUpdateChangesValdiationSchema = z.union([
+    isDoneSchema, // only takes the isDone field
+    isDeletedSchema, // only takes the isDeleted field
+    TodoUpdateChangesSchema.omit({ isDone: true, isDeleted: true }).strict(), // takes everything other that isDone or isDeleted
+]);
 export const TodoUpdateRequestSchema = z.object({
     changes: TodoUpdateChangesSchema,
 });

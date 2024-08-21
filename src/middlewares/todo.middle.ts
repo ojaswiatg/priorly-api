@@ -6,7 +6,7 @@ import {
 import TodoModel from "#models/TodoModel";
 import {
     TodoDetailsResponseSchema,
-    TodoUpdateChangesSchema,
+    TodoUpdateChangesValdiationSchema,
     type TTodoDetailsResponseSchema,
     type TTodoUpdateChangesSchema,
 } from "#schemas";
@@ -87,7 +87,7 @@ export async function parseTodoUpdates(
 ) {
     const changes = req.body?.changes; // taking id in body, will require some extra work of processing the request.
 
-    const failedMessage = "Failed to update the todo item";
+    const failedMessage = "Failed to edit the todo";
 
     if (_.isEmpty(changes)) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
@@ -97,28 +97,14 @@ export async function parseTodoUpdates(
         });
     }
 
-    const isValidRequestData = TodoUpdateChangesSchema.safeParse(changes);
+    const isValidRequestData =
+        TodoUpdateChangesValdiationSchema.safeParse(changes);
     if (!isValidRequestData.success) {
         return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: failedMessage,
             error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Invalid request`,
             errors: getFormattedZodErrors(isValidRequestData.error),
-        });
-    }
-
-    // if todo has done/deleted changes, then don't allow any other changes
-    if (
-        (changes.isDone ||
-            changes.isDone === false ||
-            changes.isDeleted ||
-            changes.isDeleted === false) &&
-        _.values(changes).length > 1
-    ) {
-        return res.status(EServerResponseCodes.BAD_REQUEST).json({
-            rescode: EServerResponseRescodes.ERROR,
-            message: failedMessage,
-            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Cannot apply more changes when toggling deleted or done`,
         });
     }
 
@@ -141,26 +127,17 @@ export async function parseTodoUpdates(
         updates.deletedOn = null;
     }
 
-    try {
-        const todo = req.body.todo; // guaranteed by doesTodoExistMiddleware
+    const todo = req.body.todo; // guaranteed by doesTodoExistMiddleware
 
-        // if todo is deleted then forbid other changes other than recovery
-        if (
-            todo.isDeleted &&
-            (changes.isDeleted || _.values(changes).length > 1)
-        ) {
-            return res.status(EServerResponseCodes.BAD_REQUEST).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: failedMessage,
-                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Cannot apply any changes to a deleted item`,
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+    // if todo is deleted then changes must ONLY contain isDeleted: false
+    if (
+        (todo.isDeleted && changes.isDeleted) || // changes must not contain isDeleted: true
+        (todo.isDeleted && _.values(changes).length > 1) // changes must not contain any other changes
+    ) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
             message: failedMessage,
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Todo lookup failed`,
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: Cannot apply any changes to a deleted item`,
         });
     }
 

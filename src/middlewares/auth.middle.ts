@@ -5,11 +5,7 @@ import {
 } from "#constants";
 import SessionModel from "#models/SessionModel";
 import UserModel, { UserSchema } from "#models/UserModel";
-import {
-    IsCorrectPasswordSchema,
-    userEmailSchema,
-    type TIsCorrectPasswordSchema,
-} from "#schemas";
+import { IsCorrectPasswordSchema, userEmailSchema } from "#schemas";
 import { getFormattedZodErrors, logURL } from "#utils";
 import bcrypt from "bcrypt";
 import type { NextFunction, Request, Response } from "express";
@@ -73,7 +69,8 @@ export async function isEmailAlreadyTaken(
     next: NextFunction,
 ) {
     // if new email is there then we check is email already taken with new email - in case of email change
-    const email = (req.body.newEmail || req.body.email) as string;
+    const email = (req.body.newEmail || req.body.email) as string; // guaranteed by isUserAuthenticated
+    const userEmail = req.query.email as string;
 
     const isValidEmail = userEmailSchema.safeParse(email).success;
     if (!isValidEmail) {
@@ -85,11 +82,12 @@ export async function isEmailAlreadyTaken(
     }
 
     try {
-        const user = await UserModel.findOne({ email: email });
+        const user = await UserModel.findOne({ email });
 
         if (_.isEmpty(user)) {
+            // everything is fine
             req.query.newEmail = req.body.newEmail;
-            req.query.email = req.body.email;
+            req.query.email = userEmail;
             next();
         } else {
             return res.status(EServerResponseCodes.CONFLICT).json({
@@ -168,6 +166,7 @@ export async function doesUserExist(
             });
         }
 
+        req.query.email = user.email;
         req.body.user = user;
         next();
     } catch (error) {
@@ -185,10 +184,10 @@ export async function doesPasswordMatch(
     res: Response,
     next: NextFunction,
 ) {
-    const userDetails = req.body as TIsCorrectPasswordSchema;
-
-    // params email guranteed by isUserAuthenticated middleware
-    userDetails.email = req.query.email || req.body.email;
+    const userDetails = {
+        email: req.query.email as string, //guranteed by isUserAuthenticated or doesUserExist middleware
+        password: req.body.password,
+    };
 
     const isValidUserDetails = IsCorrectPasswordSchema.safeParse(userDetails);
 
@@ -220,7 +219,7 @@ export async function doesPasswordMatch(
         }
 
         req.query.userId = foundUser.id;
-        req.query.email = foundUser.email;
+        req.query.email = userDetails.email;
 
         next();
     } catch (error) {

@@ -61,7 +61,6 @@ export const UserChangeEmailSchema = z.object({
     otp: z.number(),
     email: userEmailSchema,
     newEmail: userEmailSchema,
-    password: z.string(),
 });
 
 export const UserChangePasswordSchema = z

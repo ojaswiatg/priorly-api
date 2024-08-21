@@ -33,9 +33,11 @@ router.get(
 );
 
 router.post("/forgot", doesUserExist, AuthController.forgotPassword); // sends an email caught by /user/forgot
+
 router.post(
     "/change",
     isUserAuthenticated,
+    doesPasswordMatch,
     isEmailAlreadyTaken,
     AuthController.changeEmail,
 ); // sends an email caught by /user/change/email

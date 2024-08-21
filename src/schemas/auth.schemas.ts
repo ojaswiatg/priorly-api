@@ -26,8 +26,8 @@ export const AuthLoginRequest = z.object({
 });
 
 export const AuthChangeEmailRequestSchema = z.object({
-    email: userEmailSchema,
     newEmail: userEmailSchema,
+    password: z.string(),
 });
 
 export type TAuthSignupRequest = z.infer<typeof AuthSignupRequest>;

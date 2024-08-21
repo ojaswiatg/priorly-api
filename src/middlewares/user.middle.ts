@@ -1,6 +1,6 @@
 import { EServerResponseCodes, EServerResponseRescodes } from "#constants";
 import OTPModel from "#models/OTPModel";
-import { ValidateOTPSchema, type TValidateOTPSchema } from "#schemas";
+import { ValidateOTPSchema } from "#schemas";
 import { getFormattedZodErrors } from "#utils";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
@@ -10,7 +10,10 @@ export async function validateOTP(
     res: Response,
     next: NextFunction,
 ) {
-    const otpDetails = req.body as TValidateOTPSchema;
+    const otpDetails = {
+        otp: req.body.otp,
+        email: req.query.email || req.body.email,
+    };
 
     const isValidOTPDetails = ValidateOTPSchema.safeParse(otpDetails);
     if (!isValidOTPDetails.success) {
@@ -26,11 +29,11 @@ export async function validateOTP(
     try {
         const userDetails = await OTPModel.findOne({ otp: otpDetails.otp });
 
-        if (_.isEmpty(userDetails) || userDetails.otp !== otpDetails.otp) {
+        if (_.isEmpty(userDetails) || userDetails.email !== otpDetails.email) {
             return res.status(EServerResponseCodes.FORBIDDEN).json({
                 rescode: EServerResponseRescodes.ERROR,
-                message: "OTP not valid",
-                error: `${EServerResponseCodes.FORBIDDEN}: Invalid OTP`,
+                message: "OTP not valid on expired, please generate a new OTP",
+                error: `${EServerResponseCodes.FORBIDDEN}: Invalid/Expired OTP`,
             });
         }
 
@@ -38,8 +41,8 @@ export async function validateOTP(
             otp: otpDetails.otp,
             email: userDetails.email,
             newEmail: userDetails.newEmail ?? "",
-            name: userDetails.name ?? "",
             password: userDetails.password ?? "",
+            name: userDetails.name ?? "",
             operation: userDetails.operation,
         };
 

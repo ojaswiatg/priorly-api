@@ -132,9 +132,7 @@ export async function generateNewOTPForEmail(
         return createdOTP.otp;
     } catch (error) {
         console.error("helper/auth: generateNewOTPForEmail");
-        console.error(
-            `Failed to get generate new OTP. Email id: ${params.email}`,
-        );
+        console.error(`Failed to generate new OTP. Email id: ${params.email}`);
         console.error(error);
         return null;
     }

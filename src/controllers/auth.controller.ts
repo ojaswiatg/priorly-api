@@ -42,7 +42,7 @@ async function signup(req: Request, res: Response) {
     }
 
     try {
-        userDetails = AuthSignupRequest.parse(userDetails); // strips unnecessary keys
+        userDetails = AuthSignupRequest.parse(userDetails); // strips unnecessary keys and matches password with confirm password
     } catch (error) {
         const errors = getFormattedZodErrors(error as ZodError);
 
@@ -240,12 +240,13 @@ async function changeEmail(req: Request, res: Response) {
     logURL(req);
 
     // all error handling are being done by the individual methods
-    const foundUser = req.body.user as InferSchemaType<typeof UserSchema>; // guaranteed from isUserAuthenticated middleware
+    const oldEmail = req.query.email as string; // guaranteed by isUserAuthenticated middleware
     const newEmail = req.query.newEmail as string; // guranteed by isEmailAlreadyTaken middleware
 
     const requestData = {
-        email: req.body.email,
+        email: oldEmail,
         newEmail: req.body.newEmail,
+        password: req.body.password,
     };
     const isValidRequestData =
         AuthChangeEmailRequestSchema.safeParse(requestData);
@@ -259,7 +260,7 @@ async function changeEmail(req: Request, res: Response) {
     }
 
     const otp = await generateNewOTPForEmail({
-        email: foundUser.email,
+        email: oldEmail,
         newEmail: requestData.newEmail,
         operation: EOTPOperation.CHANGE_EMAIL,
     });

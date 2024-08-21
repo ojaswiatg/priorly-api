@@ -1,7 +1,6 @@
 import UserController from "#controllers/user.controller";
 import {
     doesPasswordMatch,
-    isEmailAlreadyTaken,
     isUserAuthenticated,
 } from "#middlewares/auth.middle";
 import { validateOTP } from "#middlewares/user.middle";
@@ -13,11 +12,10 @@ const router = Router();
 
 router.post("/signup", validateOTP, UserController.signup); // catches an email sent by /auth/signup
 router.post("/forgot", validateOTP, UserController.forgotPassword); // catches an email sent by /auth/forgot
+
 router.post(
     "/change/email",
     isUserAuthenticated,
-    isEmailAlreadyTaken,
-    doesPasswordMatch,
     validateOTP,
     UserController.changeEmail,
 ); // catches an email sent by /auth/change

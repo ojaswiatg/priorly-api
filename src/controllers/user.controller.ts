@@ -31,7 +31,7 @@ export async function signup(req: Request, res: Response) {
         email: req.body.otpData.email,
         name: req.body.otpData.name,
         password: req.body.otpData.password,
-        operation: req.body.otpData.operation,
+        operation: req.body.otpData.operation as EOTPOperation,
     };
 
     const isValidRequestData = UserCreateSchema.safeParse(requestData);
@@ -214,8 +214,7 @@ export async function changeEmail(req: Request, res: Response) {
         otp: req.body.otpData.otp,
         email: req.body.otpData.email,
         newEmail: req.body.otpData.newEmail,
-        password: req.body.otpData.password,
-        operation: req.body.otpData.operation,
+        operation: req.body.otpData.operation as EOTPOperation,
     };
 
     const isValidRequestData = UserChangeEmailSchema.safeParse(userDetails);
