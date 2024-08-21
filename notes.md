@@ -3,7 +3,7 @@
 1. Implementing OAuth
 2. Create API Documentation
 3. Deploy
-4. Create a landing page maybe using github pages
+4. Create a landing page maybe using github pages or some other app
 
 ## Client
 
