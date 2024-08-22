@@ -10,6 +10,9 @@ COPY . .
 # Copy the enironment variables
 COPY .env.production .env
 
+# Clean up
+RUN bun clean:all
+
 # Install dependencies
 RUN bun install
 
