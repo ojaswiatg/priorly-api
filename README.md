@@ -33,6 +33,7 @@ Set the origin to your repository.
 2. Don't forget to set the origin to your repository!!!
 
 ## How to build and deploy your app
+Make sure you are logged in to your account in gcloud<br/><br/>
 
 1. Authenticate to your repo
 
