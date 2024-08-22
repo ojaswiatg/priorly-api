@@ -1,9 +1,11 @@
 ## Server
 
-1. Implementing OAuth
-2. Create API Documentation
-3. Deploy
-4. Create a landing page maybe using github pages or some other app
+1. Deploy
+2. Implement OAuth
+3. Replace api url in the Thunder Client to the api url that deployed
+4. Export the APIs to postman
+5. Add postman installation and usage in the documentation
+6. Create a landing page maybe using github pages or some other app
 
 ## Client
 
