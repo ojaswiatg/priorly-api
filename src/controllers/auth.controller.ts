@@ -1,16 +1,17 @@
 import {
     API_ERROR_MAP,
-    AUTH_COOKIE,
     EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
 import {
-    createNewUserSession,
+    addSessionToUserSet,
+    generateNewCSRFToken,
     generateNewOTPForEmail,
+    removeAllSessionFromUserSet,
+    removeSessionFromUserSet,
     sendMail,
 } from "#helpers";
-import SessionModel from "#models/SessionModel";
 import UserModel, { UserSchema } from "#models/UserModel";
 import {
     AuthChangeEmailRequestSchema,
@@ -19,6 +20,7 @@ import {
     type TAuthLoginRequest,
     type TAuthSignupRequest,
 } from "#schemas";
+import type { TCustomSession } from "#types";
 import { getFormattedZodErrors, logURL } from "#utils";
 import type { Request, Response } from "express";
 import _ from "lodash";
@@ -127,24 +129,31 @@ async function login(req: Request, res: Response) {
     try {
         const foundUser = req.body.user as InferSchemaType<
             typeof UserSchema
-        > & { id: string }; // guaranteed from doesUserExist middleware
+        > & { id: string }; // guaranteed by doesUserExist middleware
 
-        const sid = await createNewUserSession(foundUser.id);
-        if (!sid) {
-            return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: "Failed to login",
-                error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session creation failed`,
-            });
-        }
+        const userId = req.query.userId as string; // guaranteed by doesUserExist middleware
 
-        return res
-            .cookie("sid", sid, AUTH_COOKIE)
-            .status(EServerResponseCodes.OK)
-            .json({
-                rescode: EServerResponseRescodes.SUCCESS,
-                message: "User logged in successfully",
-            });
+        const csrfToken = generateNewCSRFToken();
+        (req.session as TCustomSession).user = {
+            id: foundUser.id,
+            csrfToken,
+        };
+
+        console.info(
+            "Session created. User id: ",
+            userId,
+            " | Session id: ",
+            req.sessionID,
+        );
+
+        // maintaining another map for all user sessions
+        await addSessionToUserSet(userId, req.sessionID);
+
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "User logged in successfully",
+            data: { csrfToken },
+        });
     } catch (error) {
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
@@ -158,34 +167,57 @@ async function login(req: Request, res: Response) {
 async function logout(req: Request, res: Response) {
     logURL(req);
 
-    const sid = req.query.sid; // sid is guranteed bythe isUserAuthenticated middleware
-
-    try {
-        await SessionModel.findByIdAndDelete(sid);
-        return res
-            .cookie("sid", "", AUTH_COOKIE)
-            .status(EServerResponseCodes.OK)
-            .json({
-                rescode: EServerResponseRescodes.SUCCESS,
-                message: "User logged out successfully",
-            });
-    } catch (error) {
-        console.error(error);
-        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+    const session = req.session as TCustomSession;
+    if (!session || _.isEmpty(session.user)) {
+        return res.status(EServerResponseCodes.FORBIDDEN).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Failed to logout",
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
+            message: "Please log in to continue",
+            error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
         });
     }
+
+    const userId = (req.session as TCustomSession).user.id;
+
+    // delete this session for this user
+    await removeSessionFromUserSet(userId, req.sessionID);
+
+    req.session.destroy((error) => {
+        if (error) {
+            console.error(
+                "Failed to terminate user session. User id: ",
+                userId,
+            );
+        } else {
+            console.info(
+                "Session terminated. User id: ",
+                userId,
+                " | Session id: ",
+                req.sessionID,
+            );
+        }
+    });
+    return res.status(EServerResponseCodes.OK).json({
+        rescode: EServerResponseRescodes.SUCCESS,
+        message: "User logged out successfully",
+    });
 }
 
 async function logoutAllSessions(req: Request, res: Response) {
     logURL(req);
 
-    const userId = req.query.userId; // userId is guranteed bythe isUserAuthenticated middleware
+    const session = req.session as TCustomSession;
+    if (!session || _.isEmpty(session.user)) {
+        return res.status(EServerResponseCodes.FORBIDDEN).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Please log in to continue",
+            error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
+        });
+    }
 
     try {
-        await SessionModel.deleteMany({ user: userId });
+        const userId = (req.session as TCustomSession).user.id;
+        await removeAllSessionFromUserSet(userId, req.sessionID);
+
         return res.status(EServerResponseCodes.OK).json({
             rescode: EServerResponseRescodes.SUCCESS,
             message: "User logged out successfully",
@@ -310,15 +342,21 @@ export async function deleteAccount(req: Request, res: Response) {
             methodName: "user/deleteAccount",
         });
 
-        await SessionModel.deleteMany({ user: userId });
+        req.session.destroy((error) => {
+            if (error) {
+                console.error(
+                    "Failed to terminate user session. User id: ",
+                    userId,
+                );
+            } else {
+                console.info("Session ended. User id: ", userId);
+            }
+        });
 
-        return res
-            .cookie("sid", "", AUTH_COOKIE)
-            .status(EServerResponseCodes.OK)
-            .json({
-                rescode: EServerResponseRescodes.SUCCESS,
-                message: "Account deleted successfully",
-            });
+        return res.status(EServerResponseCodes.OK).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "Account deleted successfully",
+        });
     } catch (error) {
         console.error(error);
         return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({

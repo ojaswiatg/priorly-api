@@ -1,6 +1,9 @@
 {
     "compilerOptions": {
         "paths": {
+            "#config": ["./src/config"],
+            "#config/*": ["./src/config/*"],
+
             "#constants": ["./src/constants"],
             "#constants/*": ["./src/constants/*"],
 
@@ -34,7 +37,7 @@
 
         // Enable latest features
         "lib": ["ESNext", "DOM"],
-        "target": "ES2015",
+        "target": "ES2023",
         "module": "ESNext",
         "moduleDetection": "force",
         "allowJs": true,

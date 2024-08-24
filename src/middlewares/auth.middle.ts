@@ -3,23 +3,29 @@ import {
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
-import SessionModel from "#models/SessionModel";
 import UserModel, { UserSchema } from "#models/UserModel";
 import { IsCorrectPasswordSchema, userEmailSchema } from "#schemas";
+import type { TCustomSession } from "#types";
 import { getFormattedZodErrors, logURL } from "#utils";
 import bcrypt from "bcrypt";
 import type { NextFunction, Request, Response } from "express";
 import _ from "lodash";
-import { isValidObjectId, type InferSchemaType } from "mongoose";
+import { type InferSchemaType } from "mongoose";
 
 export async function isUserAuthenticated(
     req: Request,
     res: Response,
     next: NextFunction,
 ) {
-    const sid = req.cookies.sid;
+    const session = req.session as TCustomSession;
+    const csrfToken = req.get("x-csrf");
 
-    if (!sid || !isValidObjectId(sid)) {
+    if (
+        !session ||
+        _.isEmpty(session.user) ||
+        !csrfToken ||
+        csrfToken !== session.user.csrfToken
+    ) {
         return res.status(EServerResponseCodes.FORBIDDEN).json({
             rescode: EServerResponseRescodes.ERROR,
             message: "Please log in to continue",
@@ -28,7 +34,6 @@ export async function isUserAuthenticated(
     }
 
     try {
-        const session = await SessionModel.findById(sid);
         if (_.isEmpty(session)) {
             return res.status(EServerResponseCodes.FORBIDDEN).json({
                 rescode: EServerResponseRescodes.ERROR,
@@ -37,8 +42,8 @@ export async function isUserAuthenticated(
             });
         }
 
-        const foundUser = await UserModel.findById(session.userId);
-        if (_.isEmpty(foundUser) || session.userId !== foundUser.id) {
+        const foundUser = await UserModel.findById(session.user.id);
+        if (_.isEmpty(foundUser)) {
             return res.status(EServerResponseCodes.NOT_FOUND).json({
                 rescode: EServerResponseRescodes.ERROR,
                 message: "User not found in this session",
@@ -46,9 +51,8 @@ export async function isUserAuthenticated(
             });
         }
 
-        req.query.userId = session.userId;
+        req.query.userId = session.user.id;
         req.query.email = foundUser.email;
-        req.query.sid = sid;
         req.body.user = foundUser;
 
         next();
@@ -69,8 +73,8 @@ export async function isEmailAlreadyTaken(
     next: NextFunction,
 ) {
     // if new email is there then we check is email already taken with new email - in case of email change
-    const email = (req.body.newEmail || req.body.email) as string; // guaranteed by isUserAuthenticated
-    const userEmail = req.query.email as string;
+    const email = (req.body.newEmail || req.body.email) as string;
+    const userEmail = req.query.email as string; // guaranteed by isUserAuthenticated
 
     const isValidEmail = userEmailSchema.safeParse(email).success;
     if (!isValidEmail) {
@@ -113,32 +117,16 @@ export async function isUserAlreadyLoggedIn(
     res: Response,
     next: NextFunction,
 ) {
-    const sid = req.cookies.sid;
-    if (!sid || !isValidObjectId(sid)) {
-        next();
-        return;
-    }
-
-    try {
-        const session = await SessionModel.findById(sid);
-        if (!_.isEmpty(session)) {
-            return res.status(EServerResponseCodes.BAD_REQUEST).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: "Please log out to continue",
-                error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
-            });
-        } else {
-            next();
-        }
-    } catch (error) {
-        logURL(req);
-        console.error(error);
-        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+    const session = req.session as TCustomSession;
+    if (!_.isEmpty(session) && !_.isEmpty(session.user)) {
+        return res.status(EServerResponseCodes.BAD_REQUEST).json({
             rescode: EServerResponseRescodes.ERROR,
-            message: "Failed to verify user credentials",
-            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
+            message: "Please log out to continue",
+            error: `${API_ERROR_MAP[EServerResponseCodes.BAD_REQUEST]}: User already logged in`,
         });
     }
+
+    next();
 }
 
 export async function doesUserExist(
@@ -168,6 +156,7 @@ export async function doesUserExist(
 
         req.query.email = user.email;
         req.body.user = user;
+        req.query.userId = user.id;
         next();
     } catch (error) {
         logURL(req);

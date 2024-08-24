@@ -33,49 +33,61 @@ Set the origin to your repository.
 2. Don't forget to set the origin to your repository!!!
 
 ## How to build and deploy your app
+
 Make sure you are logged in to your account in gcloud<br/><br/>
+
 1. Create a docker image
+
 ```bash
 docker build -t <image_name> .
 ```
 
 2. Test the docker image locally
+
 ```bash
 docker run -p <host_port>:<port_specified_in_app> run <image_name>
 ```
+
 > Now you can visit http://localhost<host_port> to see the app running.
 
 3. Login to the gcloud cli
+
 ```bash
 gcloud auth login
 ```
 
 4. Select the correct project id
+
 ```bash
 gcloud config set project <your_google_cloud_project_name>
 ```
 
 5. Authenticate to your repo
+
 ```bash
 gcloud auth configure-docker <region_name>-docker.pkg.dev
 ```
 
 6. Tag the docker image
+
 ```bash
 docker tag <image_name> <region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
 ```
 
 7. Push the docker image to the Google Artifact Registry
+
 ```bash
 docker push <region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
 ```
 
 8. Deploy the image to the Google App Engine - read the instructions carefully and answer the questions asked
+
 ```bash
 gcloud app deploy --image-url=<region_name>-docker.pkg.dev/<project_id>/<repository_name>/<image_name>:<tag>
 ```
 
 9. Browse your app
+
 ```bash
 gcloud app browse
 ```

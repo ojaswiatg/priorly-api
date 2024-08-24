@@ -3,10 +3,12 @@ import AppRouter from "#routes/router";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
-// loads the config files
 import express from "express";
+import session from "express-session";
 import mongoose from "mongoose";
+import { redisClient, RedisStore } from "./config/redis";
 
+// loads the config files
 dotenv.config();
 const app = express();
 
@@ -27,9 +29,25 @@ const app = express();
 //     credentials: true,
 // };
 
+// Redis connections to manage sessions
+
 app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
+app.use(
+    session({
+        store: new RedisStore({ client: redisClient }),
+        secret: String(process.env.EXPRESS_SESSION_KEY),
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure:
+                String(process.env.ENV_TYPE) === "production" ? true : false,
+            httpOnly: true,
+            maxAge: 1000 * 60 * 30, // 30 minutes
+        },
+    }),
+);
 
 app.use("/api", AppRouter);
 
@@ -47,6 +65,6 @@ mongoose
     .catch((error) => {
         console.error(error);
         console.error(
-            "Error connecting to MongoDB. Please check your connection string in .env file.",
+            "Error connecting to MongoDB. Please check the MONGO_URI variable in the .env file.",
         );
     });

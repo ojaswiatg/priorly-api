@@ -1,13 +1,11 @@
 import {
     API_ERROR_MAP,
-    AUTH_COOKIE,
     EOTPOperation,
     EServerResponseCodes,
     EServerResponseRescodes,
 } from "#constants";
-import { createNewUserSession, sendMail } from "#helpers";
+import { sendMail } from "#helpers";
 import OTPModel from "#models/OTPModel";
-import SessionModel from "#models/SessionModel";
 import UserModel from "#models/UserModel";
 import {
     UserChangeEmailSchema,
@@ -59,7 +57,8 @@ export async function signup(req: Request, res: Response) {
             email: requestData.email,
             password: requestData.password,
         };
-        const createdUser = await UserModel.create(newUser);
+
+        await UserModel.create(newUser);
 
         // send mail synchronously
         const clientURI = String(process.env.CLIENT_URI);
@@ -74,32 +73,11 @@ export async function signup(req: Request, res: Response) {
             methodName: "user/signup",
         });
 
-        // Try to create session for user, if sid is there in response cookie, redirect to dashboard, else redirect to login page
-        let sid;
-        try {
-            sid = await createNewUserSession(createdUser.id);
-            if (!sid) {
-                return res
-                    .status(EServerResponseCodes.INTERNAL_SERVER_ERROR)
-                    .json({
-                        rescode: EServerResponseRescodes.ERROR,
-                        message: "Failed to login",
-                        error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session creation failed`,
-                    });
-            }
-        } catch (error) {
-            console.error("user/signup: Failed to create user session");
-            console.error(error);
-        }
-
         // return response
-        return res
-            .cookie("sid", sid, AUTH_COOKIE)
-            .status(EServerResponseCodes.CREATED)
-            .json({
-                rescode: EServerResponseRescodes.SUCCESS,
-                message: "User registered successfully",
-            });
+        return res.status(EServerResponseCodes.CREATED).json({
+            rescode: EServerResponseRescodes.SUCCESS,
+            message: "User registered successfully",
+        });
     } catch (error) {
         console.error(error);
         // Since we stored data in the OTP table, we are responsible, hence internal server error
@@ -174,12 +152,6 @@ export async function forgotPassword(req: Request, res: Response) {
             templateFileName: "password-changed",
             context: {},
             methodName: "user/forgot",
-        });
-
-        // delete all user sessions synchronously
-        SessionModel.deleteMany({ user: updatedUser.id }).catch((error) => {
-            console.error("Failed to delete all user sessions");
-            console.error(error);
         });
 
         return res.status(EServerResponseCodes.OK).json({

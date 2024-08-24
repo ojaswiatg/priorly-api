@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
 import mongoose, { Document, Schema, type CallbackError } from "mongoose";
-import SessionModel from "./SessionModel";
 import TodoModel from "./TodoModel";
 
 interface IUser extends Document {
@@ -55,16 +54,6 @@ UserSchema.post("save", function (_doc, next) {
     next(); // this is important for control flow
 });
 
-// Pre means before creation - The below function already being handled by the OTP table - no use here
-// UserSchema.pre("save", async function (next) {
-//     // We don't get the saved "document" in pre hooks, we get the "this" keyword.
-
-//     const salt = await bcrypt.genSalt(); // generates a salt
-//     this.password = await bcrypt.hash(this.password, salt); // hashes the password
-
-//     next();
-// });
-
 UserSchema.pre("findOneAndUpdate", async function (next) {
     try {
         type TPasswordUpdate = { $set: { password: string } };
@@ -89,7 +78,6 @@ UserSchema.pre("findOneAndDelete", async function (next) {
     try {
         const userId = this.getFilter()._id;
         await TodoModel.deleteMany({ user: userId });
-        await SessionModel.deleteMany({ user: userId });
         next();
     } catch (error) {
         console.error(error);

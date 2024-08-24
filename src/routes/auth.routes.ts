@@ -25,12 +25,8 @@ router.post(
     AuthController.login,
 );
 
-router.get("/logout", isUserAuthenticated, AuthController.logout);
-router.get(
-    "/logout/all",
-    isUserAuthenticated,
-    AuthController.logoutAllSessions,
-);
+router.get("/logout", AuthController.logout);
+router.post("/logout/all", doesUserExist, AuthController.logoutAllSessions);
 
 router.post("/forgot", doesUserExist, AuthController.forgotPassword); // sends an email caught by /user/forgot
 
