@@ -140,10 +140,7 @@ async function login(req: Request, res: Response) {
         };
 
         console.info(
-            "Session created. User id: ",
-            userId,
-            " | Session id: ",
-            req.sessionID,
+            `Session created with session id: ${req.sessionID} for user id: ${userId}`,
         );
 
         // maintaining another map for all user sessions
@@ -167,19 +164,17 @@ async function login(req: Request, res: Response) {
 async function logout(req: Request, res: Response) {
     logURL(req);
 
-    const session = req.session as TCustomSession;
-    if (!session || _.isEmpty(session.user)) {
-        return res.status(EServerResponseCodes.FORBIDDEN).json({
-            rescode: EServerResponseRescodes.ERROR,
-            message: "Please log in to continue",
-            error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
-        });
-    }
-
-    const userId = (req.session as TCustomSession).user.id;
+    const userId = req.query.userId as string; // guaranteed by isUserAuthenticated middleware
 
     // delete this session for this user
-    await removeSessionFromUserSet(userId, req.sessionID);
+    const loggedOut = await removeSessionFromUserSet(userId, req.sessionID);
+    if (!loggedOut) {
+        return res.status(EServerResponseCodes.INTERNAL_SERVER_ERROR).json({
+            rescode: EServerResponseRescodes.ERROR,
+            message: "Failed to logout user",
+            error: `${API_ERROR_MAP[EServerResponseCodes.INTERNAL_SERVER_ERROR]}: Session lookup failed`,
+        });
+    }
 
     req.session.destroy((error) => {
         if (error) {
@@ -189,10 +184,7 @@ async function logout(req: Request, res: Response) {
             );
         } else {
             console.info(
-                "Session terminated. User id: ",
-                userId,
-                " | Session id: ",
-                req.sessionID,
+                `Session terminated with session id: ${req.sessionID} for user id: ${userId}`,
             );
         }
     });
@@ -205,17 +197,8 @@ async function logout(req: Request, res: Response) {
 async function logoutAllSessions(req: Request, res: Response) {
     logURL(req);
 
-    const session = req.session as TCustomSession;
-    if (!session || _.isEmpty(session.user)) {
-        return res.status(EServerResponseCodes.FORBIDDEN).json({
-            rescode: EServerResponseRescodes.ERROR,
-            message: "Please log in to continue",
-            error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
-        });
-    }
-
     try {
-        const userId = (req.session as TCustomSession).user.id;
+        const userId = req.query.userId as string; // guranteed by isUserAuthenticated middleware
         await removeAllSessionFromUserSet(userId, req.sessionID);
 
         return res.status(EServerResponseCodes.OK).json({

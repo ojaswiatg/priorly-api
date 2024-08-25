@@ -34,14 +34,6 @@ export async function isUserAuthenticated(
     }
 
     try {
-        if (_.isEmpty(session)) {
-            return res.status(EServerResponseCodes.FORBIDDEN).json({
-                rescode: EServerResponseRescodes.ERROR,
-                message: "Please log in to continue",
-                error: `${API_ERROR_MAP[EServerResponseCodes.FORBIDDEN]}: Invalid session`,
-            });
-        }
-
         const foundUser = await UserModel.findById(session.user.id);
         if (_.isEmpty(foundUser)) {
             return res.status(EServerResponseCodes.NOT_FOUND).json({
