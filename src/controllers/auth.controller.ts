@@ -188,7 +188,7 @@ async function logout(req: Request, res: Response) {
             );
         }
     });
-    return res.status(EServerResponseCodes.OK).json({
+    return res.cookie("connect.sid", "").status(EServerResponseCodes.OK).json({
         rescode: EServerResponseRescodes.SUCCESS,
         message: "User logged out successfully",
     });
