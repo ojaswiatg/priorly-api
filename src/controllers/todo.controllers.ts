@@ -34,6 +34,8 @@ async function create(req: Request, res: Response) {
 
         const createdTodo = await TodoModel.create({
             title: requestData.title,
+            isUrgent: requestData.isUrgent ?? false,
+            isImportant: requestData.isImportant ?? false,
             user: userId,
         });
 

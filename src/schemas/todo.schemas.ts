@@ -9,6 +9,8 @@ const todoTitleSchema = z
 
 export const TodoCreateRequestSchema = z.object({
     title: todoTitleSchema,
+    isUrgent: z.boolean().nullish(),
+    isImportant: z.boolean().nullish(),
 });
 
 export const TodoUpdateChangesSchema = z.object({
