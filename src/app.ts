@@ -29,8 +29,6 @@ const app = express();
 //     credentials: true,
 // };
 
-// Redis connections to manage sessions
-
 app.use(express.json());
 app.use(cors());
 app.use(cookieParser());

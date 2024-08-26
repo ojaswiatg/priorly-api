@@ -29,4 +29,6 @@ router.post(
 
 router.post("/change/name", isUserAuthenticated, UserController.changeName);
 
+router.post("/details", isUserAuthenticated, UserController.getUserDetails);
+
 export default router;

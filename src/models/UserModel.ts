@@ -20,7 +20,12 @@ export const UserSchema = new Schema(
         },
         password: {
             type: String,
-            required: [true, "A valid password is required"],
+            required: false,
+        },
+
+        googleAuthToken: {
+            type: String,
+            required: false,
         },
 
         name: { type: String, required: false, default: "" },

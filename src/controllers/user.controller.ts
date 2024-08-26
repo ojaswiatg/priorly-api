@@ -20,7 +20,7 @@ import { getFormattedZodErrors, logURL } from "#utils";
 import type { Request, Response } from "express";
 import _ from "lodash";
 
-export async function signup(req: Request, res: Response) {
+async function signup(req: Request, res: Response) {
     logURL(req);
 
     const requestData = {
@@ -97,7 +97,7 @@ export async function signup(req: Request, res: Response) {
     }
 }
 
-export async function forgotPassword(req: Request, res: Response) {
+async function forgotPassword(req: Request, res: Response) {
     logURL(req);
 
     const passwordDetails = {
@@ -178,7 +178,7 @@ export async function forgotPassword(req: Request, res: Response) {
     }
 }
 
-export async function changeEmail(req: Request, res: Response) {
+async function changeEmail(req: Request, res: Response) {
     logURL(req);
 
     const userDetails = {
@@ -268,7 +268,7 @@ export async function changeEmail(req: Request, res: Response) {
     }
 }
 
-export async function changePassword(req: Request, res: Response) {
+async function changePassword(req: Request, res: Response) {
     // password comparision guaranteed by doesPasswordMatch middleware
 
     const passowrdDetails = req.body as TUserChangePasswordSchema;
@@ -312,7 +312,7 @@ export async function changePassword(req: Request, res: Response) {
     }
 }
 
-export async function changeName(req: Request, res: Response) {
+async function changeName(req: Request, res: Response) {
     const requestData = req.body as TUserChangeNameSchema;
 
     const isValidRequestData = UserChangeNameSchema.safeParse(requestData);
@@ -344,10 +344,24 @@ export async function changeName(req: Request, res: Response) {
     }
 }
 
+async function getUserDetails(req: Request, res: Response) {
+    const user = req.body.user as { email: string; name: string }; // guaranteed by isUserAuthenticated middleware
+
+    return res.status(EServerResponseCodes.OK).json({
+        rescode: EServerResponseRescodes.SUCCESS,
+        message: "Fetched user details successfully",
+        data: {
+            name: user.name,
+            email: user.email,
+        },
+    });
+}
+
 export default {
     signup,
     forgotPassword,
     changeEmail,
     changePassword,
     changeName,
+    getUserDetails,
 };
